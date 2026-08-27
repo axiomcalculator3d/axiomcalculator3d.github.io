@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Account and Data Deletion — Calc 3D</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --primary: #4f46e5;
+    --primary-soft: #eef2ff;
+    --border: #e5e7eb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --primary: #818cf8;
+      --primary-soft: #1e1b4b;
+      --border: #334155;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.65;
+    color: var(--text);
+    background: var(--bg);
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+  h1 {
+    font-size: 28px;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+  h2 {
+    font-size: 20px;
+    margin-top: 36px;
+    color: var(--primary);
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 6px;
+  }
+  h3 {
+    font-size: 16px;
+    margin-top: 24px;
+    color: var(--text);
+  }
+  .updated {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+  .summary {
+    background: var(--primary-soft);
+    border-left: 4px solid var(--primary);
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 20px 0;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  ul { padding-left: 22px; }
+  li { margin: 4px 0; }
+  code {
+    background: var(--primary-soft);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.92em;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 15px;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th {
+    color: var(--muted);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .wrap { overflow-x: auto; }
+  footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>Account and Data Deletion</h1>
+<p class="updated">App: <strong>Calc 3D</strong> (<code>com.calc3d.nativeapp</code>) · Axiom 3D Studio · Last updated: August 27, 2026</p>
+
+<div class="summary">
+  This page explains how to delete your Calc 3D account and the data associated
+  with it. You can do most of it yourself, inside the app, without asking anyone.
+  For what depends on us, there is an email request described in section 3.
+</div>
+
+<h2>1. What you can delete yourself, right now</h2>
+
+<p>
+  Calc 3D keeps your data <strong>on your own device</strong> and, if you turned
+  backup on, <strong>in your own Google Drive account</strong>. In both cases you
+  are in control:
+</p>
+
+<h3>1.1 Erase everything on the device</h3>
+<ul>
+  <li>Open the app</li>
+  <li>Go to <strong>Settings</strong></li>
+  <li>Tap <strong>Reset All</strong></li>
+</ul>
+<p>
+  This erases quotes, sales, orders, schedule, history, printers, materials and
+  settings. It is immediate and cannot be undone.
+</p>
+
+<h3>1.2 Disconnect your Google account</h3>
+<ul>
+  <li>In <strong>Settings → Google Drive Sync</strong>, tap disconnect</li>
+</ul>
+<p>The app loses access to your account and stops sending backups.</p>
+
+<h3>1.3 Delete the backup file in your Drive</h3>
+<p>
+  The backup lives in a reserved area of your Google Drive that only the app can
+  access. To remove it permanently:
+</p>
+<ul>
+  <li>Go to <a href="https://myaccount.google.com/permissions" target="_blank">myaccount.google.com/permissions</a></li>
+  <li>Select <strong>Calc 3D</strong></li>
+  <li>Tap <strong>Remove access</strong></li>
+</ul>
+<p>
+  Removing access deletes the data the app stored in that area. Doing this from
+  Google's website works even if you have already uninstalled the app.
+</p>
+
+<h3>1.4 Uninstall the app</h3>
+<p>
+  Uninstalling erases everything that was on the device. It does not erase the
+  Drive backup or the records described in section 2 — for those, follow steps
+  1.3 and 3.
+</p>
+
+<h2>2. What stays with us, and can be deleted on request</h2>
+
+<p>
+  Outside your device and your Drive, we keep very few records. All of them can
+  be deleted at your request:
+</p>
+
+<div class="wrap">
+<table>
+  <thead>
+    <tr>
+      <th>Record</th>
+      <th>What it contains</th>
+      <th>Why it exists</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Authentication account</td>
+      <td>Your Google email, name and profile picture</td>
+      <td>To identify you when you sign in to the app</td>
+    </tr>
+    <tr>
+      <td>Pro entitlement</td>
+      <td>Purchase identifier and the email tied to it</td>
+      <td>To recognise your purchase on a new device and detect refunds</td>
+    </tr>
+    <tr>
+      <td>Coupon use</td>
+      <td>Code used and purchase amount — only if you used a referral coupon</td>
+      <td>To calculate the referring partner's commission</td>
+    </tr>
+    <tr>
+      <td>Notification address</td>
+      <td>A device identifier generated by Google, without your name or email</td>
+      <td>To send app notices and purchase re-checks</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  <strong>We do not keep</strong> your quotes, sales, clients, orders, prices or
+  any data about your business. None of it leaves your device and your Drive —
+  not to us, not to third parties.
+</p>
+
+<h2>3. How to request deletion</h2>
+
+<p>
+  Send an email to
+  <a href="mailto:axiomcalculator3d@gmail.com">axiomcalculator3d@gmail.com</a>
+  with the subject <strong>Account deletion</strong> and tell us:
+</p>
+<ul>
+  <li>The <strong>Google account email</strong> you use in the app</li>
+</ul>
+<p>
+  That is all. The request must come from the address to be deleted — that is how
+  we confirm it is you, without asking for any other document.
+</p>
+
+<div class="summary">
+  <strong>Timing:</strong> we confirm receipt within 7 days and complete the
+  deletion within <strong>30 days</strong> of the request.
+</div>
+
+<p>
+  If you prefer, we also answer at
+  <a href="https://instagram.com/axiom_3d_studio" target="_blank">@axiom_3d_studio</a>
+  on Instagram — but in that case we will ask you to confirm by email, so we can
+  be sure the request came from you.
+</p>
+
+<h2>4. What we cannot delete</h2>
+
+<ul>
+  <li>
+    <strong>Your Google Play purchase history.</strong> That record belongs to
+    Google, not to us. To handle it, use
+    <a href="https://myaccount.google.com/" target="_blank">myaccount.google.com</a>
+    or contact Google Play support.
+  </li>
+  <li>
+    <strong>Purchase records required by law.</strong> Where a purchase exists,
+    the corresponding record may need to be kept for the period required by tax
+    and consumer protection law, even after the account is deleted. During that
+    period the record is archived and used for nothing other than meeting that
+    obligation.
+  </li>
+  <li>
+    <strong>Backups already deleted.</strong> Once you remove the app's access to
+    your Drive, the file is outside your control and ours — neither party can
+    recover it.
+  </li>
+</ul>
+
+<h2>5. Does deleting my account remove my Pro purchase?</h2>
+
+<p>
+  The purchase stays tied to your Google Play account. If you delete your data
+  here and later install the app again with the same account, Pro is restored
+  normally — you do not have to buy it again.
+</p>
+<p>
+  If what you want is a <strong>refund</strong>, that is handled by Google Play,
+  not by this page. See the
+  <a href="https://support.google.com/googleplay/answer/2479637" target="_blank">Google
+  Play refund policy</a>.
+</p>
+
+<h2>6. Other policies</h2>
+<ul>
+  <li><a href="https://axiomcalculator3d.github.io/calc3d-legal/privacy_policy_en.html">Privacy Policy</a></li>
+  <li><a href="https://axiomcalculator3d.github.io/calc3d-legal/terms_of_service_en.html">Terms of Service</a></li>
+  <li><a href="exclusao-de-conta.html">Versão em português</a></li>
+</ul>
+
+<footer>
+  © 2026 Axiom 3D Studio · Calc 3D
+</footer>
+
+</body>
+</html>
