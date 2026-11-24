@@ -391,10 +391,12 @@ function slots(day,w){
   return EX[day].map(function(x){
     var cur=null;sw.forEach(function(z){if(z.o===x.k&&(z.from||1)<=w&&(!cur||(z.from||1)>=(cur.from||1)))cur=z});
     if(!cur||cur.k===x.k)return x;
+    if(cur.k==="-")return null;
     var lu=null;sw.forEach(function(z){if(z.k===cur.k&&z.u)lu=cleanUrl(z.u)||lu});return{k:cur.k,n:cur.n,t:cur.t,r:vidFor(cur.n),u:lu,v:[],sw:x.k,orig:x.n,from:cur.from||1};
-  });
+  }).filter(Boolean);
 }
-function swapHist(day){var seen={},out=[];swaps(day).forEach(function(z){if(z.k!==z.o&&!seen[z.k]){seen[z.k]=1;out.push({k:z.k,n:z.n,t:z.t,r:null,v:[],sw:z.o})}});return out}
+function swapHist(day){var seen={},out=[];swaps(day).forEach(function(z){if(z.k!==z.o&&z.k!=="-"&&!seen[z.k]){seen[z.k]=1;out.push({k:z.k,n:z.n,t:z.t,r:null,v:[],sw:z.o})}});return out}
+function hiddenSlots(day,w){var vis={};slots(day,w).forEach(function(z){vis[z.sw||z.k]=1});return EX[day].filter(function(x){return!vis[x.k]})}
 function exList(day){return slots(day,st.week).concat(extras(day))}
 function allList(){var out=[];["A","B"].forEach(function(d){EX[d].concat(swapHist(d)).concat(extras(d,true)).forEach(function(e){out.push({day:d,e:e})})});return out}
 function pickList(g,act,o,have){
@@ -413,7 +415,9 @@ function swapBox(day,x){
 function addCard(day){
   var have={};exList(day).forEach(function(z){have[z.n.toLowerCase()]=1});
   var g=CATALOG.filter(function(c){return c[0]===st.xg})[0];
-  var h='<section class="card" id="xcard"><h2>Adicionar exercício extra</h2><p class="mut" style="margin:6px 0 0;font-size:13px">Escolha o grupo e toque no exercício que você fez. Ele passa a aparecer no Treino '+day+' de todas as semanas, mas não conta na porcentagem da ficha.</p>';
+  var hid=hiddenSlots(day,st.week),hh='';
+  if(hid.length)hh='<section class="card"><h2>Tirados da ficha</h2><p class="mut" style="margin:6px 0 0;font-size:13px">Não aparecem da semana em que foram tirados em diante. O histórico continua salvo.</p><div class="xls">'+hid.map(function(z){return'<button type="button" data-act="swundo" data-o="'+z.k+'">'+illSvg(z)+'<span>'+esc(z.n)+'</span><i>Voltar para a ficha</i></button>'}).join('')+'</div></section>';
+  var h=hh+'<section class="card" id="xcard"><h2>Adicionar exercício extra</h2><p class="mut" style="margin:6px 0 0;font-size:13px">Escolha o grupo e toque no exercício que você fez. Ele passa a aparecer no Treino '+day+' de todas as semanas, mas não conta na porcentagem da ficha.</p>';
   h+='<div class="xgr">'+CATALOG.map(function(c){return'<button type="button" data-act="xgrp" data-g="'+c[0]+'" aria-pressed="'+(st.xg===c[0])+'">'+c[1]+'</button>'}).join("")+'</div>';
   if(g){
     h+=pickList(g,"xpick","",have);
@@ -454,7 +458,7 @@ function drawWeeks(){
 function drawInfo(){
   var w=st.week,p=PLAN[w-1],box=$("#info");
   if(st.tab==="A"||st.tab==="B"){
-    box.innerHTML="<b>Semana "+w+" de 12</b> · "+p[1]+" reps · "+esc(planText(w))+"<br>Treino "+st.tab+": <b>"+countDone(w,st.tab)+" de "+EX[st.tab].length+"</b> exercícios completos";
+    box.innerHTML="<b>Semana "+w+" de 12</b> · "+p[1]+" reps · "+esc(planText(w))+"<br>Treino "+st.tab+": <b>"+countDone(w,st.tab)+" de "+slots(st.tab,w).length+"</b> exercícios completos";
   }else box.innerHTML="";
 }
 function drawTabs(){document.querySelectorAll("#tabs button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.tab===st.tab))})}
@@ -488,7 +492,7 @@ function exCard(day,x,big){
     h+='<div class="vbox"><label class="f">Link do vídeo dele (Instagram ou YouTube)<input type="text" inputmode="url" autocomplete="off" data-act-in="vlink" data-k="'+x.k+'" data-day="'+day+'" value="'+esc(x.u||"")+'" placeholder="Cole aqui o link do reel"></label><a class="vsrc" href="https://www.instagram.com/alexeysmirnov__/reels/" target="_blank" rel="noopener">Procurar nos reels do @alexeysmirnov__ ›</a></div>';
   }
   if(!x.x){
-    h+='<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px">'+(x.sw?'<button type="button" class="btn del" style="color:var(--acc)" data-act="swundo" data-o="'+x.sw+'">Voltar para '+esc(x.orig)+'</button>':'')+'<button type="button" class="btn del" style="color:var(--acc)" data-act="swopen" data-o="'+(x.sw||x.k)+'" data-n="'+esc(x.orig||x.n)+'">'+(st.swk===(x.sw||x.k)?'Fechar troca':'Trocar exercício')+'</button></div>';
+    h+='<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px">'+(x.sw?'<button type="button" class="btn del" style="color:var(--acc)" data-act="swundo" data-o="'+x.sw+'">Voltar para '+esc(x.orig)+'</button>':'')+'<button type="button" class="btn del" data-act="swhide" data-o="'+(x.sw||x.k)+'">Tirar da ficha</button><button type="button" class="btn del" style="color:var(--acc)" data-act="swopen" data-o="'+(x.sw||x.k)+'" data-n="'+esc(x.orig||x.n)+'">'+(st.swk===(x.sw||x.k)?'Fechar troca':'Trocar exercício')+'</button></div>';
     if(st.swk===(x.sw||x.k))h+=swapBox(day,x);
   }
   if(x.x)h+='<div style="display:flex;justify-content:flex-end;margin-top:8px"><button type="button" class="btn del" data-act="xdel" data-k="'+x.k+'">'+'Tirar exercício extra da ficha'+'</button></div>';
@@ -505,7 +509,7 @@ function drawFocus(day){
   h+='<div class="grid2" style="margin-top:0"><button type="button" class="btn ghost" style="margin:0" data-act="fnav" data-d="-1">‹ Anterior</button><button type="button" class="btn" style="margin:0" data-act="fnav" data-d="1">Próximo ›</button></div>';
   return h;
 }
-function undoBar(day){var u=st.xundo;if(!u||u.day!==day)return'';return'<div class="banner row" id="xundo" style="align-items:center"><span><b>'+esc(u.n)+'</b> saiu do Treino '+day+'.</span><button type="button" class="btn del" style="color:var(--acc)" data-act="xundo" data-k="'+u.k+'">Desfazer</button></div>'}
+function undoBar(day){var u=st.xundo;if(!u||u.day!==day)return'';return'<div class="banner row" id="xundo" style="align-items:center"><span><b>'+esc(u.n)+'</b> saiu do Treino '+day+'.</span><button type="button" class="btn del" style="color:var(--acc)" data-act="'+(u.hide?'swundo':'xundo')+'" data-k="'+u.k+'" data-o="'+u.k+'">Desfazer</button></div>'}
 function drawWorkout(day){
   if(st.focus)return undoBar(day)+drawFocus(day);
   return undoBar(day)+focusBtn()+drawWorkoutFull(day);
@@ -708,8 +712,8 @@ function calGrid(){
     for(var w2=1;w2<=12;w2++){
       var n=countDone(w2,d),any=false,doc=docs[did(w2,d)];
       if(dayHasEx(doc))any=true;
-      var c=n>=EX[d].length?"c2":(n>0||any)?"c1":"";
-      h+='<i class="'+c+'" title="Semana '+w2+' treino '+d+': '+n+' de '+EX[d].length+'"></i>';
+      var sl=slots(d,w2).length;var c=n>=sl?"c2":(n>0||any)?"c1":"";
+      h+='<i class="'+c+'" title="Semana '+w2+' treino '+d+': '+n+' de '+sl+'"></i>';
     }
   });
   return h+'</div><p class="mut" style="font-size:12px;margin:8px 0 0">Verde forte: treino completo. Verde claro: treino começado.</p>';
@@ -1026,10 +1030,11 @@ document.addEventListener("click",function(ev){
   else if(a==="swopen"){if(st.swk===b.dataset.o){st.swk=null;render();return}st.swk=b.dataset.o;st.swg=guessType(b.dataset.n);render();var sb2=$("#swb");if(sb2&&sb2.scrollIntoView)try{sb2.scrollIntoView({block:"start"})}catch(e){}}
   else if(a==="swclose"){st.swk=null;render()}
   else if(a==="swgrp"){st.swg=b.dataset.g;render();var sb3=$("#swb");if(sb3&&sb3.scrollIntoView)try{sb3.scrollIntoView({block:"start"})}catch(e){}}
-  else if(a==="swpick"||a==="swundo"){
+  else if(a==="swpick"||a==="swundo"||a==="swhide"){
     var so=b.dataset.o,base=EX[day].filter(function(z){return z.k===so})[0];if(!base)return;
     var ent;
     if(a==="swundo")ent={o:so,k:so,n:base.n,from:st.week};
+    else if(a==="swhide")ent={o:so,k:"-",n:base.n,from:st.week};
     else{
       var sn=(b.dataset.typed?($("#sw-name").value||""):b.dataset.n).trim().replace(/\s+/g," ").slice(0,60);
       if(!sn){var sm=$("#sw-msg");if(sm){sm.textContent="Escreva o nome do exercício.";sm.className="msg err"}return}
@@ -1042,8 +1047,10 @@ document.addEventListener("click",function(ev){
       var arr=(Array.isArray(d.swap[day])?d.swap[day]:[]).filter(function(z){return !(z&&z.o===so&&(z.from||1)===st.week)});
       arr.push(ent);d.swap[day]=arr;
     });
-    st.swk=null;render();
-    var nc=document.querySelector('.ex[data-k="'+ent.k+'"]');if(nc&&nc.scrollIntoView)try{nc.scrollIntoView({block:"start"})}catch(e){}
+    st.swk=null;st.xundo=a==="swhide"?{day:day,k:so,n:base.n,hide:1}:null;
+    if(st.focus){var ln3=exList(day).length;if(st.fi>=ln3)st.fi=Math.max(0,ln3-1)}
+    render();
+    var nc=a==="swhide"?$("#xundo"):document.querySelector('.ex[data-k="'+ent.k+'"]');if(nc&&nc.scrollIntoView)try{nc.scrollIntoView({block:"start"})}catch(e){}
   }
   else if(a==="xgrp"){st.xg=st.xg===b.dataset.g?null:b.dataset.g;render();var xc=$("#xcard");if(xc&&xc.scrollIntoView)try{xc.scrollIntoView({block:"start"})}catch(e){}}
   else if(a==="xadd"||a==="xpick"){
