@@ -1,0 +1,3 @@
+Desenhos dos exercícios: Everkinetic (https://github.com/everkinetic/data), criado por Greg Priday.
+Licença: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/).
+Alteração: posição inicial e final juntas em uma imagem, recortadas e reduzidas.
