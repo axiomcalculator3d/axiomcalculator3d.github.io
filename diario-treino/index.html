@@ -93,7 +93,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .vars a{border:1px solid var(--line);border-radius:999px;padding:5px 10px;color:var(--acc);text-decoration:none;font-size:13px;font-weight:500}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--line);display:flex;gap:4px;
   padding:6px max(10px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px))}
-.tabs button{flex:1;min-height:48px;border:0;background:transparent;border-radius:10px;font-weight:600;font-size:13px;color:var(--mut);cursor:pointer}
+.tabs button{flex:1;min-width:0;min-height:48px;border:0;background:transparent;border-radius:10px;font-weight:600;font-size:13px;color:var(--mut);cursor:pointer}
 .tabs button[aria-pressed="true"]{background:var(--soft);color:var(--acc)}
 .btn{min-height:46px;border:0;border-radius:10px;background:var(--acc);color:var(--acc-ink);font-weight:600;padding:0 16px;cursor:pointer;width:100%;margin-top:12px;display:flex;align-items:center;justify-content:center;text-align:center}
 .btn.ghost{background:transparent;color:var(--acc);border:1px solid var(--acc)}
@@ -121,6 +121,17 @@ td.up{color:var(--ok);font-weight:600}
 .svgc .pt{fill:var(--acc)}
 .svgc text{fill:var(--mut);font-size:10px;font-family:var(--font)}
 .svgc text.vl{fill:var(--ink)}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.kpi{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.kpi b{display:block;font-family:var(--disp);font-size:30px;line-height:1.05;font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;color:var(--mut)}
+.prog{height:10px;background:var(--soft);border-radius:999px;overflow:hidden;margin-top:8px}
+.prog i{display:block;height:100%;background:var(--ok);border-radius:999px}
+.rank{display:flex;flex-direction:column;margin-top:8px}
+.rank div{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.rank div:first-child{border-top:0}
+.rank span:last-child{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.pos{color:var(--ok)}.neg{color:var(--warn)}
 .auth{margin-top:8vh}
 .auth p{margin:8px 0 0;font-size:13px}
 .msg{min-height:1.4em;font-size:13px;margin-top:12px}
@@ -136,6 +147,7 @@ td.up{color:var(--ok);font-weight:600}
 <div class="info" id="info"></div>
 <main id="view" class="locked"><div class="banner">Carregando…</div></main>
 <nav class="tabs" id="tabs" aria-label="Seções">
+  <button data-tab="D">Painel</button>
   <button data-tab="A">Treino A</button>
   <button data-tab="B">Treino B</button>
   <button data-tab="M">Medidas</button>
@@ -174,7 +186,7 @@ var ALL=EX.A.map(function(e){return{day:"A",e:e}}).concat(EX.B.map(function(e){r
 var MFIELDS=[["peso","Peso (kg)"],["gord","Gordura (%)"],["cintura","Cintura (cm)"],["quadril","Quadril (cm)"],["peito","Peito (cm)"],["ombros","Ombros (cm)"],["bracoD","Braço D (cm)"],["bracoE","Braço E (cm)"],["coxaD","Coxa D (cm)"],["coxaE","Coxa E (cm)"],["pant","Panturrilha (cm)"]];
 
 var $=function(s){return document.querySelector(s)};
-var st={week:1,tab:"A",pm:"max",pex:"A:supino",pdel:null};
+var st={week:1,tab:"D",pm:"max",pex:"A:supino",pdel:null};
 var docs={},dirty={},ver={},timers={},chains={};
 var sb=null,uid=null,email="",loaded=false,offline=false;
 
@@ -372,6 +384,73 @@ function drawProgress(){
   h+='<button type="button" class="btn ghost" data-act="logout">Sair da conta</button><div class="msg" id="acc-msg" role="status"></div></section>';
   return h;
 }
+
+function firstLast(ex){var f=null,l=null;for(var w=1;w<=12;w++){var m=maxKg(peek(w,ex.day,ex.e.k));if(m!=null&&m>0){if(!f)f={w:w,kg:m};l={w:w,kg:m}}}return f&&{f:f,l:l}}
+function bwSeries(){
+  var pts=[];
+  for(var w=1;w<=12;w++)["A","B"].forEach(function(d){var doc=docs[did(w,d)];var v=doc&&num(doc.bw);if(v!=null)pts.push({w:w,v:v})});
+  var by={};pts.forEach(function(p){by[p.w]=p.v});
+  return Array.apply(null,Array(12)).map(function(_,i){return{w:i+1,v:by[i+1]==null?null:by[i+1]}});
+}
+function isStandalone(){return window.matchMedia&&matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}
+var deferredInstall=null;
+function installCard(){
+  if(isStandalone())return"";
+  var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  var h='<section class="card"><h2>Instalar como aplicativo</h2>';
+  if(deferredInstall)h+='<p class="mut" style="margin:6px 0 0;font-size:13px">Abre em tela cheia, com ícone na tela inicial.</p><button type="button" class="btn" data-act="install">Instalar aplicativo</button>';
+  else if(ios)h+='<p class="mut" style="margin:6px 0 0;font-size:13px">No Safari, toque em <b style="color:var(--ink)">Compartilhar</b> e depois em <b style="color:var(--ink)">Adicionar à Tela de Início</b>.</p>';
+  else h+='<p class="mut" style="margin:6px 0 0;font-size:13px">No Chrome, abra o menu (⋮) e toque em <b style="color:var(--ink)">Instalar app</b> ou <b style="color:var(--ink)">Adicionar à tela inicial</b>.</p>';
+  return h+'</section>';
+}
+function drawDash(){
+  var total=ALL.length*12,done=0,vtot=0,sessions=0,lastDate="",wkDone=[];
+  for(var w=1;w<=12;w++){
+    var n=countDone(w,"A")+countDone(w,"B");done+=n;wkDone.push(n);
+    ["A","B"].forEach(function(d){
+      var doc=docs[did(w,d)];if(!doc)return;
+      var any=false;
+      EX[d].forEach(function(x){var e=peek(w,d,x.k);var v=vol(e);if(v!=null){vtot+=v;any=true}});
+      if(any){sessions++;if(doc.date&&doc.date>lastDate)lastDate=doc.date}
+    });
+  }
+  var cw=1;for(var q=12;q>=1;q--){if(wkDone[q-1]>0){cw=q;break}}
+  var curN=wkDone[cw-1],curT=ALL.length;
+  var pct=Math.round(done/total*100);
+  var h='<section class="card"><h2>Visão geral</h2><div class="kpis">';
+  h+='<div class="kpi"><b>'+cw+'/12</b><span>Semana atual</span></div>';
+  h+='<div class="kpi"><b>'+pct+'%</b><span>Programa concluído</span></div>';
+  h+='<div class="kpi"><b>'+sessions+'</b><span>Treinos registrados</span></div>';
+  h+='<div class="kpi"><b>'+(vtot?fmt(Math.round(vtot/1000*10)/10)+" t":"–")+'</b><span>Volume total levantado</span></div></div>';
+  h+='<div class="meta" style="margin-top:12px">Semana '+cw+': '+curN+' de '+curT+' exercícios completos</div><div class="prog"><i style="width:'+Math.round(curN/curT*100)+'%"></i></div>';
+  h+='<div class="meta">'+(lastDate?'Último treino: '+esc(lastDate.split("-").reverse().join("/")):'Nenhum treino registrado ainda')+'</div>';
+  h+='<button type="button" class="btn ghost" data-act="gocur" data-w="'+cw+'">Ir para a semana '+cw+'</button></section>';
+  h+='<section class="card"><h2>Peso corporal (kg)</h2>'+chartSvg(bwSeries(),"kg")+'</section>';
+  var gains=[];
+  ALL.forEach(function(a){var r=firstLast(a);if(r&&r.l.w>r.f.w)gains.push({n:a.e.n,d:r.l.kg-r.f.kg,p:(r.l.kg-r.f.kg)/r.f.kg*100,a:r.f.kg,b:r.l.kg})});
+  gains.sort(function(x,y){return y.p-x.p});
+  h+='<section class="card"><h2>Evolução de carga</h2>';
+  if(!gains.length)h+='<p class="mut" style="margin:8px 0 0">Registre cargas em pelo menos duas semanas para ver a evolução de cada exercício.</p>';
+  else{h+='<div class="rank">';gains.forEach(function(g){h+='<div><span>'+esc(g.n)+'<br><span class="mut" style="font-size:12px;font-weight:400">'+fmt(g.a)+' → '+fmt(g.b)+' kg</span></span><span class="'+(g.d>=0?"pos":"neg")+'">'+(g.d>0?"+":"")+fmt(Math.round(g.p*10)/10)+'%</span></div>'});h+='</div>'}
+  h+='</section>';
+  var list=mEntries();
+  h+='<section class="card"><h2>Medidas</h2>';
+  if(list.length<1)h+='<p class="mut" style="margin:8px 0 0">Nenhuma medição ainda. Use a aba Medidas.</p>';
+  else{
+    var old=list[list.length-1],cur=list[0];
+    h+='<div class="meta">Primeira medição '+esc(String(old.date).split("-").reverse().join("/"))+' · última '+esc(String(cur.date).split("-").reverse().join("/"))+'</div><div class="rank">';
+    MFIELDS.forEach(function(f){
+      var a=null,b=null;for(var i=list.length-1;i>=0;i--){var v=num(list[i][f[0]]);if(v!=null){a=v;break}}
+      for(var j=0;j<list.length;j++){var v2=num(list[j][f[0]]);if(v2!=null){b=v2;break}}
+      if(b==null)return;
+      var dd=Math.round((b-a)*10)/10;
+      h+='<div><span>'+f[1]+'</span><span>'+fmt(b)+(list.length>1?' <span class="mut" style="font-weight:400">('+(dd>0?"+":"")+fmt(dd)+')</span>':'')+'</span></div>';
+    });
+    h+='</div>';
+  }
+  h+='</section>'+installCard();
+  return h;
+}
 function drawChart(){
   var box=$("#chart");if(!box)return;
   var p=st.pex.split(":"),series=[];
@@ -383,6 +462,7 @@ function render(){
   v.className=loaded?"":"locked";
   var h=loaded?"":'<div class="banner">Carregando seu histórico…</div>';
   if(st.tab==="A"||st.tab==="B")h+=drawWorkout(st.tab);
+  else if(st.tab==="D")h+=drawDash();
   else if(st.tab==="M")h+=drawMeasures();
   else h+=drawProgress();
   v.innerHTML=h;drawWeeks();drawInfo();drawTabs();
@@ -444,6 +524,8 @@ document.addEventListener("click",function(ev){
     else{st.pdel=b.dataset.t;setTimeout(function(){if(st.pdel===b.dataset.t){st.pdel=null;if(st.tab==="M")render()}},3000)}
     render();
   }
+  else if(a==="install"){if(deferredInstall){deferredInstall.prompt();deferredInstall.userChoice.then(function(){deferredInstall=null;render()})}}
+  else if(a==="gocur"){st.week=+b.dataset.w;st.tab="A";render();window.scrollTo(0,0)}
   else if(a==="csv")exportCsv();
   else if(a==="backup")exportBackup();
   else if(a==="logout")logout();
@@ -546,13 +628,15 @@ function refreshWhenBack(){
     if(!(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)))render();
   }).catch(function(){offline=true;baseStatus()});
 }
+window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();deferredInstall=e;if(st.tab==="D"&&loaded)render()});
+window.addEventListener("appinstalled",function(){deferredInstall=null;if(st.tab==="D")render()});
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")refreshWhenBack()});
 window.addEventListener("online",refreshWhenBack);
 window.addEventListener("offline",function(){offline=true;baseStatus()});
 
 /* ---------- início ---------- */
 (function(){
-  try{var p=JSON.parse(lsGet("dt:prefs")||"{}");if(p.week>=1&&p.week<=12)st.week=p.week;if(["A","B","M","P"].indexOf(p.tab)>=0)st.tab=p.tab}catch(e){}
+  try{var p=JSON.parse(lsGet("dt:prefs")||"{}");if(p.week>=1&&p.week<=12)st.week=p.week;if(["D","A","B","M","P"].indexOf(p.tab)>=0)st.tab=p.tab}catch(e){}
   if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(function(){});
   if(!window.supabase||!window.supabase.createClient){
     $("#view").innerHTML='<section class="card"><h2>Sem conexão</h2><p class="mut">Não consegui carregar o sistema de login. Confira a internet e abra de novo.</p></section>';
