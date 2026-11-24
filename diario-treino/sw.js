@@ -7,3 +7,4 @@ self.addEventListener("fetch",e=>{
   e.respondWith(fetch(r).then(res=>{if(res.ok||res.type==="opaque"){const cp=res.clone();caches.open(C).then(c=>c.put(r,cp))}return res})
     .catch(()=>caches.match(r).then(m=>m||(r.mode==="navigate"?caches.match(self.registration.scope):undefined))));
 });
+self.addEventListener("notificationclick",e=>{e.notification.close();e.waitUntil(self.clients.matchAll({type:"window"}).then(cs=>{for(const c of cs){if("focus"in c)return c.focus()}return self.clients.openWindow(self.registration.scope)}))});
