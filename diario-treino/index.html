@@ -108,6 +108,12 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .xhd .ill{width:110px}
 .xls{display:flex;flex-direction:column;margin-top:8px;border-top:1px solid var(--line)}
 .xls button{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:48px;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;padding:6px 2px;cursor:pointer;font-size:15px}
+.xls button .ill{width:64px;flex:0 0 auto}
+.xls button span{flex:1;min-width:0}
+.xls button small{display:block;font-size:12px;color:var(--ok);font-weight:600;margin-top:2px}
+.vbox{margin-top:10px;background:var(--soft);border-radius:10px;padding:10px}
+.vsrc{display:inline-block;margin-top:8px;color:var(--acc);font-weight:600;font-size:13px}
+.exh .xtag{flex:0 0 auto}
 .xls button i{font-style:normal;font-size:13px;font-weight:600;color:var(--acc);white-space:nowrap}
 .xls button:disabled{cursor:default;color:var(--mut)}
 .xls button:disabled i{color:var(--ok)}
@@ -353,14 +359,29 @@ function guessType(n){
   if(/agachamento|leg|extensora|afundo|passada|b[uú]lgaro|hack|quadr|sissy|coxa/.test(n))return"quadriceps";
   return"outro";
 }
-function illKey(x){return ILL[x.k]?x.k:TYPE_ILL[x.t||guessType(x.n)]||"outro"}
+function illByName(n){
+  n=String(n||"").toLowerCase();
+  var M=[[/invertido|face ?pull/,"crucifixo"],[/panturrilha.*(sentad|s[oó]leo)/,"solear"],[/panturrilha/,"pant_lp"],[/voador|pec ?deck|peck|crucifixo|crossover|fly/,"voador"],
+   [/tr[ií]ceps|mergulho|^paralelas$|supino fechado/,"triceps"],[/supino|flex[aã]o de bra|paralelas para peito/,"supino"],[/eleva[cç][aã]o (lateral|frontal)|desenvolvimento|arnold|remada alta|encolhimento/,"abducao"],
+   [/rosca/,"rosca"],[/puxada|barra fixa|pull ?down|pullover/,"puxada"],[/remada|serrote/,"remada"],[/extensora|sissy/,"extensora"],[/leg ?press/,"legpress"],
+   [/flexora|n[oó]rdica/,"flexora"],[/p[eé]lvica|ponte|hip ?thrust|abdutora|adutora|gl[uú]teo|abdu[cç][aã]o na polia/,"gluteo"],
+   [/agachamento|afundo|passada|b[uú]lgaro|step|hack|goblet/,"agach"],[/stiff|terra|good ?morning|bom dia|lombar|hiperextens|superman/,"lombar"],[/abdominal|prancha|eleva[cç][aã]o de pernas|roda/,"abdominal"]];
+  for(var i=0;i<M.length;i++)if(M[i][0].test(n))return M[i][1];
+  return null;
+}
+/* vídeos do @alexeysmirnov__ já conhecidos (código do reel) */
+var VID={"supino reto com barra":"DaS-miuoAp_","supino reto com halteres":"C3kJPuuK9NE","supino na máquina":"DfhqwvjIfMU","flexão de braço":"DTF6dQFCNFc","voador (peck deck)":"DadO4XKoIcL","crossover polia alta":"Da5rbIPIv2k","crucifixo reto com halteres":"Dfz2UcMxqvd","elevação lateral com halteres":"De95rSOxGyn","tríceps polia alta (barra)":"DanjJfsohyC","tríceps corda":"Dbi0O7gox70","leg press horizontal":"C6sxUeMqSNU","cadeira extensora":"DaaiUueounE","panturrilha no leg press":"DMOB3qaqCUa","panturrilha sentado (sóleo)":"DMOB3qaqCUa","panturrilha em pé na máquina":"DNvY9t90Bvy","abdominal supra com carga":"DexFPg3RojI","abdominal infra":"Df4n4AhsA65","puxada frente aberta":"DgBGNsZRnXo","remada baixa no cabo":"DfP4RBzRETA","crucifixo invertido na máquina":"DXPI-zlCOAV","crucifixo invertido":"Db3iK2tKccI","rosca na polia baixa":"DZaNZlQIeoZ","rosca direta barra w":"DeHhNdQIru3","rosca direta com barra":"DQjnPcniKlP","extensão lombar na mesa romana":"C5LElpoKwsU"};
+function vidFor(n){return VID[String(n||"").toLowerCase()]||null}
+function hrefOf(x){return x.u?x.u:x.r?REEL+x.r+"/":null}
+function cleanUrl(u){u=String(u||"").trim();var m=u.match(/https?:\/\/(www\.)?(instagram\.com|youtube\.com|youtu\.be|m\.youtube\.com)\/[^\s"'<>]+/i);return m?m[0]:""}
+function illKey(x){return ILL[x.k]?x.k:illByName(x.n)||TYPE_ILL[x.t||guessType(x.n)]||"outro"}
 function illSvg(x,big){
   return'<svg class="ill'+(big?" big":"")+'" viewBox="0 0 160 100" role="img" aria-label="Desenho de referência: '+esc(x.n)+'"><defs><marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mvh"/></marker></defs>'+ILL[illKey(x)]+'</svg>';
 }
 /* ---------- exercícios extras do próprio usuário ---------- */
 function extras(day,withOff){
   var s=docs.settings&&docs.settings.extra&&docs.settings.extra[day];
-  return(Array.isArray(s)?s:[]).filter(function(x){return x&&x.k&&x.n&&(withOff||!x.off)}).map(function(x){return{k:x.k,n:x.n,t:x.t,r:null,v:[],x:true}});
+  return(Array.isArray(s)?s:[]).filter(function(x){return x&&x.k&&x.n&&(withOff||!x.off)}).map(function(x){return{k:x.k,n:x.n,t:x.t,r:vidFor(x.n),u:cleanUrl(x.u)||null,v:[],x:true}});
 }
 /* trocas: settings.swap[day]=[{o:chave original,k:chave nova,n,t,from:semana}]; k===o volta ao original */
 function swaps(day){var s=docs.settings&&docs.settings.swap&&docs.settings.swap[day];return Array.isArray(s)?s.filter(function(z){return z&&z.o&&z.k}):[]}
@@ -369,7 +390,7 @@ function slots(day,w){
   return EX[day].map(function(x){
     var cur=null;sw.forEach(function(z){if(z.o===x.k&&(z.from||1)<=w&&(!cur||(z.from||1)>=(cur.from||1)))cur=z});
     if(!cur||cur.k===x.k)return x;
-    return{k:cur.k,n:cur.n,t:cur.t,r:null,v:[],sw:x.k,orig:x.n,from:cur.from||1};
+    var lu=null;sw.forEach(function(z){if(z.k===cur.k&&z.u)lu=cleanUrl(z.u)||lu});return{k:cur.k,n:cur.n,t:cur.t,r:vidFor(cur.n),u:lu,v:[],sw:x.k,orig:x.n,from:cur.from||1};
   });
 }
 function swapHist(day){var seen={},out=[];swaps(day).forEach(function(z){if(z.k!==z.o&&!seen[z.k]){seen[z.k]=1;out.push({k:z.k,n:z.n,t:z.t,r:null,v:[],sw:z.o})}});return out}
@@ -377,7 +398,7 @@ function exList(day){return slots(day,st.week).concat(extras(day))}
 function allList(){var out=[];["A","B"].forEach(function(d){EX[d].concat(swapHist(d)).concat(extras(d,true)).forEach(function(e){out.push({day:d,e:e})})});return out}
 function pickList(g,act,o,have){
   var h='<div class="xhd">'+illSvg({k:"",n:g[1],t:g[0]})+'<b>'+g[1]+'</b></div><div class="xls">';
-  g[2].forEach(function(n){var on=have[n.toLowerCase()];h+='<button type="button" data-act="'+act+'" data-g="'+g[0]+'" data-o="'+(o||"")+'" data-n="'+esc(n)+'"'+(on?' disabled':'')+'><span>'+esc(n)+'</span><i>'+(on?'✓ no treino':act==="swpick"?'Trocar por este':'+ Adicionar')+'</i></button>'});
+  g[2].forEach(function(n){var on=have[n.toLowerCase()];h+='<button type="button" data-act="'+act+'" data-g="'+g[0]+'" data-o="'+(o||"")+'" data-n="'+esc(n)+'"'+(on?' disabled':'')+'>'+illSvg({k:"",n:n,t:g[0]})+'<span>'+esc(n)+(vidFor(n)?'<small>▶ tem vídeo dele</small>':'')+'</span><i>'+(on?'✓ no treino':act==="swpick"?'Trocar por este':'+ Adicionar')+'</i></button>'});
   return h+'</div>';
 }
 function swapBox(day,x){
@@ -441,8 +462,8 @@ function exCard(day,x,big){
   var w=st.week,id=did(w,day),doc=docs[id]||{},e=(doc.ex&&doc.ex[x.k])||{s:[["","",""],["","",""],["","",""]],rest:"",pain:"",variant:"",note:""};
   var p=PLAN[w-1],sg=suggestion(w,day,x.k),h="";
   h+='<section class="card ex'+(isDone(e)?" done":"")+'" data-k="'+x.k+'">';
-  h+='<div class="exh">'+(x.r?'<a href="'+REEL+x.r+'/" target="_blank" rel="noopener">'+esc(x.n)+'</a>':'<span class="nm">'+esc(x.n)+(x.x?'<span class="xtag">extra</span>':x.sw?'<span class="xtag">troca</span>':'')+'</span>')+'<button type="button" class="tick" data-act="conc" data-k="'+x.k+'" aria-pressed="'+(!!e.done)+'" aria-label="Marcar '+esc(x.n)+' como concluído com o padrão da ficha" title="Concluir com o padrão da ficha">✓</button></div>';
-  h+=(big?illSvg(x,true):'')+'<div class="exb">'+(big?'':illSvg(x))+'<div><div class="meta">'+e.s.length+(e.s.length===1?' série':' séries')+' · '+p[1]+' reps · descanso até 2 min'+(x.r||x.x||x.sw?'':' · sem vídeo dele')+'</div>'+(x.sw?'<div class="meta">No lugar de '+esc(x.orig)+' desde a semana '+x.from+'</div>':'');
+  h+='<div class="exh">'+(hrefOf(x)?'<a href="'+esc(hrefOf(x))+'" target="_blank" rel="noopener">'+esc(x.n)+'</a>'+(x.x?'<span class="xtag">extra</span>':x.sw?'<span class="xtag">troca</span>':''):'<span class="nm">'+esc(x.n)+(x.x?'<span class="xtag">extra</span>':x.sw?'<span class="xtag">troca</span>':'')+'</span>')+'<button type="button" class="tick" data-act="conc" data-k="'+x.k+'" aria-pressed="'+(!!e.done)+'" aria-label="Marcar '+esc(x.n)+' como concluído com o padrão da ficha" title="Concluir com o padrão da ficha">✓</button></div>';
+  h+=(big?illSvg(x,true):'')+'<div class="exb">'+(big?'':illSvg(x))+'<div><div class="meta">'+e.s.length+(e.s.length===1?' série':' séries')+' · '+p[1]+' reps · descanso até 2 min'+(hrefOf(x)||x.x||x.sw?'':' · sem vídeo dele')+'</div>'+(x.sw?'<div class="meta">No lugar de '+esc(x.orig)+' desde a semana '+x.from+'</div>':'');
   h+='<div class="chips pr">'+prBadges(w,day,x.k)+'</div></div></div>';
   if(sg){
     h+='<div class="sug"><span>Última carga: <b>'+fmt(sg.last.kg)+' kg</b> (sem. '+sg.last.w+')<br>'+(sg.keep?'Manter: <b>'+fmt(sg.lo)+' kg</b>':'Sugerido: <b>'+fmt(sg.lo)+(sg.hi>sg.lo?'–'+fmt(sg.hi):'')+' kg</b>')+'</span><button type="button" data-act="fill" data-k="'+x.k+'" data-v="'+sg.lo+'">Preencher</button></div>';
@@ -462,6 +483,9 @@ function exCard(day,x,big){
   h+='<label class="f">Variação<select data-k="'+x.k+'" data-f="variant">'+vopts.map(function(o){return'<option value="'+esc(o)+'"'+(e.variant===o?" selected":"")+'>'+esc(o||"Da ficha")+'</option>'}).join("")+'</select></label></div>';
   h+='<label class="f" style="margin-top:10px">Observação<textarea data-k="'+x.k+'" data-f="note" placeholder="Aparelho, ajuste do banco, sensação…">'+esc(e.note)+'</textarea></label>';
   h+='<div style="display:flex;justify-content:flex-end;margin-top:10px"><button type="button" class="btn del" data-act="clr" data-k="'+x.k+'">'+(st.cf==="x"+x.k?"Tocar de novo para limpar":"Limpar exercício")+'</button></div>';
+  if((x.x||x.sw)&&!x.r){
+    h+='<div class="vbox"><label class="f">Link do vídeo dele (Instagram ou YouTube)<input type="text" inputmode="url" autocomplete="off" data-act-in="vlink" data-k="'+x.k+'" data-day="'+day+'" value="'+esc(x.u||"")+'" placeholder="Cole aqui o link do reel"></label><a class="vsrc" href="https://www.instagram.com/alexeysmirnov__/reels/" target="_blank" rel="noopener">Procurar nos reels do @alexeysmirnov__ ›</a></div>';
+  }
   if(!x.x){
     h+='<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px">'+(x.sw?'<button type="button" class="btn del" style="color:var(--acc)" data-act="swundo" data-o="'+x.sw+'">Voltar para '+esc(x.orig)+'</button>':'')+'<button type="button" class="btn del" style="color:var(--acc)" data-act="swopen" data-o="'+(x.sw||x.k)+'" data-n="'+esc(x.orig||x.n)+'">'+(st.swk===(x.sw||x.k)?'Fechar troca':'Trocar exercício')+'</button></div>';
     if(st.swk===(x.sw||x.k))h+=swapBox(day,x);
@@ -476,7 +500,7 @@ function drawFocus(day){
   var list=exList(day);if(st.fi>=list.length)st.fi=0;
   var x=list[st.fi];
   var h='<div class="row"><button type="button" class="btn ghost" data-act="focus" style="margin:0;width:auto;padding:0 14px">← Sair do modo foco</button><span class="mut">'+(st.fi+1)+' de '+list.length+'</span></div>'+exCard(day,x,true);
-  if(x.r)h+='<a class="btn" style="text-decoration:none;margin-top:0" href="'+REEL+x.r+'/" target="_blank" rel="noopener">Ver vídeo de referência</a>';
+  if(hrefOf(x))h+='<a class="btn" style="text-decoration:none;margin-top:0" href="'+esc(hrefOf(x))+'" target="_blank" rel="noopener">Ver vídeo de referência</a>';
   h+='<div class="grid2" style="margin-top:0"><button type="button" class="btn ghost" style="margin:0" data-act="fnav" data-d="-1">‹ Anterior</button><button type="button" class="btn" style="margin:0" data-act="fnav" data-d="1">Próximo ›</button></div>';
   return h;
 }
@@ -880,6 +904,15 @@ document.addEventListener("change",function(ev){
   if(t.id==="r-sec"&&loaded){var sv=Math.round(num(t.value)||0);if(sv>=5&&sv<=900){mut("settings",function(d){d.rest=sv});render()}}
   if(t.id==="r-time"&&loaded){mut("settings",function(d){d.remind=d.remind||{on:false};d.remind.time=t.value})}
   if(t.id==="photo"&&t.files&&t.files[0]&&loaded){uploadPhoto(t.files[0]);return}
+  if(t.dataset&&t.dataset.actIn==="vlink"&&loaded){
+    var vu=cleanUrl(t.value),vk=t.dataset.k,vd=t.dataset.day;
+    if(t.value.trim()&&!vu){setStatus("Esse link não é do Instagram nem do YouTube.",true);setTimeout(baseStatus,3000);return}
+    mut("settings",function(d){
+      (d.extra&&Array.isArray(d.extra[vd])?d.extra[vd]:[]).forEach(function(z){if(z&&z.k===vk)z.u=vu});
+      (d.swap&&Array.isArray(d.swap[vd])?d.swap[vd]:[]).forEach(function(z){if(z&&z.k===vk)z.u=vu});
+    });
+    render();return;
+  }
   if(t.id==="p-ex"){st.pex=t.value;drawChart()}
   else if(t.id==="p-met"){st.pm=t.value;drawChart()}
   else if(t.id==="restore"&&t.files&&t.files[0])restoreFile(t.files[0]);
