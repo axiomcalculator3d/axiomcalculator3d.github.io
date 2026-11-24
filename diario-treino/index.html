@@ -148,6 +148,10 @@ input[type=time]{width:100%;min-height:44px;border:1px solid var(--line);backgro
 .photos img,.cmp img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:var(--soft);display:block}
 .photos figcaption,.cmp figcaption{font-size:12px;color:var(--mut);margin-top:4px}
 .cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.tmr{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:18px;cursor:pointer;padding:0;flex:0 0 auto}
+.leg{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:10px;font-size:12px}
+.leg span{display:inline-flex;align-items:center;gap:5px}
+.leg i{width:10px;height:10px;border-radius:50%;display:inline-block}
 .auth{margin-top:8vh}
 .auth p{margin:8px 0 0;font-size:13px}
 .msg{min-height:1.4em;font-size:13px;margin-top:12px}
@@ -157,7 +161,7 @@ input[type=time]{width:100%;min-height:44px;border:1px solid var(--line);backgro
 </head>
 <body class="authing">
 <header class="top">
-  <div class="row"><h1>Diário de Treino</h1><span class="status" id="status" role="status">Carregando…</span></div>
+  <div class="row"><h1>Diário de Treino</h1><span style="display:flex;align-items:center;gap:8px"><span class="status" id="status" role="status">Carregando…</span><button type="button" class="tmr" data-act="rest-start" aria-label="Cronômetro de descanso" title="Cronômetro de descanso">⏱</button></span></div>
   <nav class="weeks" id="weeks" aria-label="Semanas"></nav>
 </header>
 <div class="info" id="info"></div>
@@ -399,7 +403,7 @@ function drawProgress(){
   var lbl="";
   for(var w=1;w<=12;w++){var n=countDone(w,"A")+countDone(w,"B"),pct=Math.round(n/ALL.length*100);h+='<div title="Semana '+w+': '+n+' de '+ALL.length+'"><i style="height:'+pct+'%"></i></div>';lbl+="<span>"+w+"</span>"}
   h+='</div><div class="bl">'+lbl+'</div></section>';
-  h+='<section class="card"><h2>Curva do exercício</h2><div class="grid2"><label class="f">Exercício<select id="p-ex">'+ALL.map(function(a){return'<option value="'+a.day+":"+a.e.k+'"'+(st.pex===a.day+":"+a.e.k?" selected":"")+'>'+esc(a.e.n)+' ('+a.day+')</option>'}).join("")+'</select></label>';
+  h+='<section class="card"><h2>Curva do exercício</h2><div class="grid2"><label class="f">Exercício<select id="p-ex"><option value="all:all"'+(st.pex==="all:all"?" selected":"")+'>Todos juntos (variação %)</option>'+ALL.map(function(a){return'<option value="'+a.day+":"+a.e.k+'"'+(st.pex===a.day+":"+a.e.k?" selected":"")+'>'+esc(a.e.n)+' ('+a.day+')</option>'}).join("")+'</select></label>';
   h+='<label class="f">Métrica<select id="p-met"><option value="max"'+(st.pm==="max"?" selected":"")+'>Carga máxima (kg)</option><option value="vol"'+(st.pm==="vol"?" selected":"")+'>Volume (kg × reps)</option><option value="reps"'+(st.pm==="reps"?" selected":"")+'>Repetições totais</option></select></label></div><div id="chart"></div></section>';
   h+='<section class="card"><h2>Carga máxima (kg)</h2><div class="tw"><table><thead><tr><th>Exercício</th>';
   for(var x=1;x<=12;x++)h+="<th>S"+x+"</th>";
@@ -649,8 +653,29 @@ function remindTick(){
   }catch(e){}
 }
 setInterval(remindTick,30000);
+function chartMulti(){
+  var W=340,H=210,pl=38,pr=10,pt=14,pb=24,lines=[],lo=0,hi=0;
+  ALL.forEach(function(a,idx){
+    var base=null,pts=[];
+    for(var w=1;w<=12;w++){var v=metricVal(peek(w,a.day,a.e.k),st.pm);if(v==null||v<=0)continue;if(base==null)base=v;var pc=(v/base-1)*100;pts.push({w:w,v:pc});if(pc<lo)lo=pc;if(pc>hi)hi=pc}
+    if(pts.length)lines.push({n:a.e.n,c:"hsl("+Math.round(idx*360/ALL.length)+",65%,50%)",pts:pts});
+  });
+  if(!lines.length)return'<p class="mut">Sem registros ainda. Registre cargas para ver todos os exercícios juntos.</p>';
+  hi=Math.max(hi,10);lo=Math.min(lo,-10);
+  var X=function(w){return pl+(w-1)*(W-pl-pr)/11},Y=function(v){return pt+(H-pt-pb)*(1-(v-lo)/(hi-lo))};
+  var s='<svg class="svgc" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Variação percentual de todos os exercícios por semana">';
+  [lo,0,hi].forEach(function(v){var y=Y(v);s+='<line class="ax" x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y+'" y2="'+y+'"/><text x="'+(pl-6)+'" y="'+(y+3)+'" text-anchor="end">'+Math.round(v)+'%</text>'});
+  lines.forEach(function(l){
+    s+='<polyline fill="none" stroke="'+l.c+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="'+l.pts.map(function(q){return X(q.w)+","+Y(q.v)}).join(" ")+'"/>';
+    l.pts.forEach(function(q){s+='<circle cx="'+X(q.w)+'" cy="'+Y(q.v)+'" r="2.5" fill="'+l.c+'"/>'});
+  });
+  for(var w2=1;w2<=12;w2++)s+='<text x="'+X(w2)+'" y="'+(H-6)+'" text-anchor="middle">'+w2+'</text>';
+  s+='</svg><div class="leg">'+lines.map(function(l){return'<span><i style="background:'+l.c+'"></i>'+esc(l.n)+'</span>'}).join("")+'</div><p class="mut" style="font-size:12px;margin:8px 0 0">Cada linha mostra quanto o exercício subiu ou desceu em relação à primeira semana registrada.</p>';
+  return s;
+}
 function drawChart(){
   var box=$("#chart");if(!box)return;
+  if(st.pex==="all:all"){box.innerHTML=chartMulti();return}
   var p=st.pex.split(":"),series=[];
   for(var w=1;w<=12;w++)series.push({w:w,v:metricVal(peek(w,p[0],p[1]),st.pm)});
   box.innerHTML=chartSvg(series,st.pm==="max"?"kg":st.pm==="vol"?"kg × reps":"reps");
@@ -718,6 +743,7 @@ document.addEventListener("click",function(ev){
   var day=st.tab,id=did(st.week,day);
   if(a==="login"||a==="signup"){doAuth(a);return}
   if(a==="rest-stop"){stopRest();return}
+  if(a==="rest-start"){if(!restBox().hidden&&rt.iv)stopRest();else startRest(120);return}
   if(a==="rest-add"){var l=Math.max(0,Math.ceil((rt.end-Date.now())/1000))+30;startRest(l);return}
   if(!loaded)return;
   if(a==="energy"){mut(id,function(d){d.week=st.week;d.day=day;d.energy=b.dataset.v;if(!d.date)d.date=today()});render()}
