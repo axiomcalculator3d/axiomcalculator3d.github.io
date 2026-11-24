@@ -490,7 +490,7 @@ function exCard(day,x,big){
     h+='<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px">'+(x.sw?'<button type="button" class="btn del" style="color:var(--acc)" data-act="swundo" data-o="'+x.sw+'">Voltar para '+esc(x.orig)+'</button>':'')+'<button type="button" class="btn del" style="color:var(--acc)" data-act="swopen" data-o="'+(x.sw||x.k)+'" data-n="'+esc(x.orig||x.n)+'">'+(st.swk===(x.sw||x.k)?'Fechar troca':'Trocar exercício')+'</button></div>';
     if(st.swk===(x.sw||x.k))h+=swapBox(day,x);
   }
-  if(x.x)h+='<div style="display:flex;justify-content:flex-end;margin-top:8px"><button type="button" class="btn del" data-act="xdel" data-k="'+x.k+'">'+(st.cf==="r"+x.k?"Tocar de novo para tirar do Treino "+day:"Tirar exercício extra da ficha")+'</button></div>';
+  if(x.x)h+='<div style="display:flex;justify-content:flex-end;margin-top:8px"><button type="button" class="btn del" data-act="xdel" data-k="'+x.k+'">'+'Tirar exercício extra da ficha'+'</button></div>';
   else h+='<div class="vars">'+(x.v.length?'Variações:':'Variações: sem vídeo dele')+x.v.map(function(v){return'<a href="'+REEL+v[1]+'/" target="_blank" rel="noopener">'+esc(v[0])+'</a>'}).join("")+'</div>';
   h+='</section>';
   return h;
@@ -504,9 +504,10 @@ function drawFocus(day){
   h+='<div class="grid2" style="margin-top:0"><button type="button" class="btn ghost" style="margin:0" data-act="fnav" data-d="-1">‹ Anterior</button><button type="button" class="btn" style="margin:0" data-act="fnav" data-d="1">Próximo ›</button></div>';
   return h;
 }
+function undoBar(day){var u=st.xundo;if(!u||u.day!==day)return'';return'<div class="banner row" id="xundo" style="align-items:center"><span><b>'+esc(u.n)+'</b> saiu do Treino '+day+'.</span><button type="button" class="btn del" style="color:var(--acc)" data-act="xundo" data-k="'+u.k+'">Desfazer</button></div>'}
 function drawWorkout(day){
-  if(st.focus)return drawFocus(day);
-  return focusBtn()+drawWorkoutFull(day);
+  if(st.focus)return undoBar(day)+drawFocus(day);
+  return undoBar(day)+focusBtn()+drawWorkoutFull(day);
 }
 function drawWorkoutFull(day){
   var id=did(st.week,day),d=docs[id]||{},h="";
@@ -922,8 +923,8 @@ document.addEventListener("keydown",function(ev){
 });
 document.addEventListener("click",function(ev){
   var b=ev.target.closest("button");if(!b)return;
-  if(b.dataset.w){st.week=+b.dataset.w;render();window.scrollTo(0,0);return}
-  if(b.dataset.tab){st.fi=0;st.tab=b.dataset.tab;st.pdel=null;render();window.scrollTo(0,0);return}
+  if(b.dataset.w){st.xundo=null;st.week=+b.dataset.w;render();window.scrollTo(0,0);return}
+  if(b.dataset.tab){st.xundo=null;st.fi=0;st.tab=b.dataset.tab;st.pdel=null;render();window.scrollTo(0,0);return}
   var a=b.dataset.act;if(!a)return;
   var day=st.tab,id=did(st.week,day);
   if(a==="login"||a==="signup"){doAuth(a);return}
@@ -1041,12 +1042,13 @@ document.addEventListener("click",function(ev){
     var xm2=$("#x-msg");if(xm2){xm2.textContent=xn+" entrou no Treino "+day+". Ele está logo acima desta lista.";xm2.className="msg"}
     var xc2=$("#xcard");if(xc2&&xc2.scrollIntoView)try{xc2.scrollIntoView({block:"start"})}catch(e){}
   }
-  else if(a==="xdel"){
-    var rk="r"+b.dataset.k;
-    if(st.cf!==rk){st.cf=rk;setTimeout(function(){if(st.cf===rk){st.cf=null;render()}},3500);render();return}
-    st.cf=null;
-    mut("settings",function(d){var arr=d.extra&&d.extra[day];if(Array.isArray(arr))arr.forEach(function(z){if(z&&z.k===b.dataset.k)z.off=true})});
+  else if(a==="xdel"||a==="xundo"){
+    var xk=b.dataset.k,off=a==="xdel",xnm="";
+    mut("settings",function(d){var arr=d.extra&&d.extra[day];if(Array.isArray(arr))arr.forEach(function(z){if(z&&z.k===xk){z.off=off;xnm=z.n}})});
+    st.xundo=off?{day:day,k:xk,n:xnm}:null;
+    if(st.focus){var ln2=exList(day).length;if(st.fi>=ln2)st.fi=Math.max(0,ln2-1)}
     render();
+    var tg=off?$("#xundo"):document.querySelector('.ex[data-k="'+xk+'"]');if(tg&&tg.scrollIntoView)try{tg.scrollIntoView({block:"center"})}catch(e){}
   }
   else if(a==="csv")exportCsv();
   else if(a==="backup")exportBackup();
