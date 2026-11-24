@@ -308,19 +308,20 @@ function exCard(day,x){
   var p=PLAN[w-1],sg=suggestion(w,day,x.k),h="";
   h+='<section class="card ex'+(isDone(e)?" done":"")+'" data-k="'+x.k+'">';
   h+='<div class="exh">'+(x.r?'<a href="'+REEL+x.r+'/" target="_blank" rel="noopener">'+esc(x.n)+'</a>':'<span class="nm">'+esc(x.n)+'</span>')+'<button type="button" class="tick" data-act="conc" data-k="'+x.k+'" aria-pressed="'+(!!e.done)+'" aria-label="Marcar '+esc(x.n)+' como concluído com o padrão da ficha" title="Concluir com o padrão da ficha">✓</button></div>';
-  h+='<div class="meta">3 séries · '+p[1]+' reps · descanso até 2 min'+(x.r?'':' · sem vídeo dele')+'</div>';
+  h+='<div class="meta">'+e.s.length+(e.s.length===1?' série':' séries')+' · '+p[1]+' reps · descanso até 2 min'+(x.r?'':' · sem vídeo dele')+'</div>';
   h+='<div class="chips pr">'+prBadges(w,day,x.k)+'</div>';
   if(sg){
     h+='<div class="sug"><span>Última carga: <b>'+fmt(sg.last.kg)+' kg</b> (sem. '+sg.last.w+')<br>'+(sg.keep?'Manter: <b>'+fmt(sg.lo)+' kg</b>':'Sugerido: <b>'+fmt(sg.lo)+(sg.hi>sg.lo?'–'+fmt(sg.hi):'')+' kg</b>')+'</span><button type="button" data-act="fill" data-k="'+x.k+'" data-v="'+sg.lo+'">Preencher</button></div>';
   }
   h+='<div class="sets"><span></span><span class="h">kg</span><span class="h">Reps</span><span class="h">RIR</span>';
-  for(var i=0;i<3;i++){
+  for(var i=0;i<e.s.length;i++){
     h+='<span class="s">'+(i+1)+'</span>';
     for(var j=0;j<3;j++){
       h+='<input class="n" type="text" inputmode="'+(j===0?"decimal":"numeric")+'" autocomplete="off" aria-label="'+["Carga","Repetições","RIR"][j]+' da série '+(i+1)+'" data-k="'+x.k+'" data-f="set" data-i="'+i+'" data-j="'+j+'" value="'+esc(e.s[i][j])+'">';
     }
   }
   h+='</div>';
+  h+='<div style="display:flex;gap:8px;margin-top:10px"><button type="button" class="btn ghost" style="margin:0;min-height:40px" data-act="addset" data-k="'+x.k+'"'+(e.s.length>=8?' disabled':'')+'>+ Série</button>'+(e.s.length>1?'<button type="button" class="btn ghost" style="margin:0;min-height:40px" data-act="delset" data-k="'+x.k+'">− Série</button>':'')+'</div>';
   h+='<div class="grid3"><label class="f">Descanso (s)<input class="n" type="text" inputmode="numeric" data-k="'+x.k+'" data-f="rest" value="'+esc(e.rest)+'"></label>';
   h+='<label class="f">Dor<select data-k="'+x.k+'" data-f="pain">'+["","Sem dor","Leve","Moderada","Forte"].map(function(o){return'<option value="'+o+'"'+(e.pain===o?" selected":"")+'>'+(o||"–")+'</option>'}).join("")+'</select></label>';
   var vopts=[""].concat(x.v.map(function(v){return v[0]})).concat(["Outro"]);
@@ -582,7 +583,7 @@ function tickRest(){
 }
 function stopRest(){clearInterval(rt.iv);clearTimeout(rt.hide);rt.iv=null;restBox().hidden=true}
 function maybeRest(t){
-  var i=+t.dataset.i;if(i>=2)return;
+  var i=+t.dataset.i;if(i>=document.querySelectorAll('input[data-k="'+t.dataset.k+'"][data-f="set"][data-j="0"]').length-1)return;
   var kg=document.querySelector('input[data-k="'+t.dataset.k+'"][data-f="set"][data-i="'+i+'"][data-j="0"]');
   if(!kg||kg.value==="")return;
   var re=document.querySelector('input[data-k="'+t.dataset.k+'"][data-f="rest"]');
@@ -714,7 +715,7 @@ function refreshDerived(){
 function onField(t){
   if(t.dataset.f==="set"&&t.dataset.j==="0"&&t.value!==""){
     var k0=t.dataset.k,i0=+t.dataset.i;
-    for(var n=i0+1;n<3;n++){
+    for(var n=i0+1;n<8;n++){
       var nx=document.querySelector('input[data-k="'+k0+'"][data-f="set"][data-i="'+n+'"][data-j="0"]');
       if(nx&&nx.value===""){nx.value=t.value;nx.dataset.auto="1";mut(did(st.week,st.tab),function(d){exData(d,k0).s[n][0]=t.value})}
     }
@@ -817,6 +818,12 @@ document.addEventListener("click",function(ev){
     if(a==="clr"){mut(id,function(d){if(d.ex)delete d.ex[b.dataset.k];if(!dayHasEx(d))delete d.date});render()}
     else if(a==="clrday"){put(id,{});render()}
     else wipeAll();
+  }
+  else if(a==="addset"){
+    mut(id,function(d){d.week=st.week;d.day=day;var e=exData(d,b.dataset.k);if(e.s.length>=8)return;var pv=e.s[e.s.length-1];e.s.push([pv?pv[0]:"","",""]);if(!d.date)d.date=today()});render();
+  }
+  else if(a==="delset"){
+    mut(id,function(d){var e=exData(d,b.dataset.k);if(e.s.length>1)e.s.pop()});render();
   }
   else if(a==="csv")exportCsv();
   else if(a==="backup")exportBackup();
