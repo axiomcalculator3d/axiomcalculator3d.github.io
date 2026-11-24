@@ -122,6 +122,15 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .fbt button{min-height:38px;min-width:42px;border:1px solid var(--line);background:var(--bg);border-radius:8px;font-weight:600;cursor:pointer}
 .fbt button:disabled{opacity:.35}
 .fbt .fx{color:var(--bad);padding:0 12px}
+.mdl{border-top:1px solid var(--line);margin-top:12px;padding-top:10px}
+.mdl summary{font-family:var(--font);text-transform:none;font-size:15px;font-weight:400;letter-spacing:0;line-height:1.35;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.mdl summary::-webkit-details-marker{display:none}
+.mdl summary::after{content:"+";color:var(--mut);font-size:20px}
+.mdl[open] summary::after{content:"–"}
+.mdd{margin-top:12px}
+.mdi{display:flex;gap:10px;align-items:center;margin-top:8px;font-size:14px}
+.mdi .ill{width:96px}
+.mdi .mut{font-size:12px}
 .vbox{margin-top:10px;background:var(--soft);border-radius:10px;padding:10px}
 .vsrc{display:inline-block;margin-top:8px;color:var(--acc);font-weight:600;font-size:13px}
 .exh .xtag{flex:0 0 auto}
@@ -451,6 +460,44 @@ function addCard(day){
   return h+'<div class="msg" id="x-msg" role="status"></div><p class="mut" style="font-size:11px;margin:12px 0 0">Desenhos: <a href="https://github.com/everkinetic/data" target="_blank" rel="noopener" style="color:inherit">Everkinetic</a>, licença CC BY-SA 4.0.</p></section>';
 }
 
+/* ---------- modelos prontos ---------- */
+var MODELS=[
+ {id:"a",nome:"A – Corpo todo",freq:"2 a 3 vezes por semana, com 1 dia de descanso entre eles",days:{A:["Corpo todo",[["Agachamento livre",3,"8 a 12"],["Supino reto com halteres",3,"8 a 12"],["Puxada frente aberta",3,"8 a 12"],["Stiff com halteres",3,"10 a 12"],["Desenvolvimento com halteres",3,"10 a 12"],["Remada baixa no cabo",3,"10 a 12"],["Prancha",3,"30 a 45 s"]]]}},
+ {id:"ab",nome:"AB – Superior e inferior",freq:"4 vezes por semana (A, B, descanso, A, B)",days:{
+  A:["Superiores",[["Supino reto com barra",3,"8 a 12"],["Puxada frente aberta",3,"8 a 12"],["Desenvolvimento com halteres",3,"10 a 12"],["Remada baixa no cabo",3,"10 a 12"],["Elevação lateral com halteres",3,"12 a 15"],["Rosca direta com barra",3,"10 a 12"],["Tríceps corda",3,"10 a 12"]]],
+  B:["Inferiores e abdômen",[["Agachamento livre",3,"8 a 10"],["Leg press 45°",3,"10 a 12"],["Stiff com barra",3,"10 a 12"],["Cadeira extensora",3,"12 a 15"],["Mesa flexora",3,"12 a 15"],["Panturrilha em pé na máquina",3,"12 a 15"],["Abdominal supra com carga",3,"12 a 15"]]]}},
+ {id:"abc",nome:"ABC – Empurrar, puxar e pernas",freq:"3 vezes por semana, ou 6 repetindo a sequência",days:{
+  A:["Peito, ombros e tríceps",[["Supino reto com barra",4,"8 a 10"],["Supino inclinado com halteres",3,"10 a 12"],["Crucifixo reto com halteres",3,"12 a 15"],["Desenvolvimento com halteres",3,"10 a 12"],["Elevação lateral com halteres",3,"12 a 15"],["Tríceps corda",3,"10 a 12"],["Tríceps francês",3,"10 a 12"]]],
+  B:["Costas e bíceps",[["Puxada frente aberta",4,"8 a 12"],["Remada baixa no cabo",3,"10 a 12"],["Remada unilateral (serrote)",3,"10 a 12"],["Crucifixo invertido",3,"12 a 15"],["Rosca direta com barra",3,"10 a 12"],["Rosca martelo",3,"10 a 12"]]],
+  C:["Pernas",[["Agachamento livre",4,"8 a 10"],["Leg press 45°",3,"10 a 12"],["Cadeira extensora",3,"12 a 15"],["Stiff com barra",3,"10 a 12"],["Mesa flexora",3,"12 a 15"],["Elevação pélvica (hip thrust)",3,"10 a 12"],["Panturrilha em pé na máquina",4,"12 a 15"]]]}},
+ {id:"abcd",nome:"ABCD – Um grupo por dia",freq:"4 vezes por semana",days:{
+  A:["Peito e tríceps",[["Supino reto com barra",4,"8 a 10"],["Supino inclinado com halteres",3,"10 a 12"],["Crossover polia alta",3,"12 a 15"],["Tríceps polia alta (barra)",3,"10 a 12"],["Tríceps francês",3,"10 a 12"],["Abdominal supra com carga",3,"12 a 15"]]],
+  B:["Costas e bíceps",[["Puxada frente aberta",4,"8 a 12"],["Remada curvada com barra",3,"8 a 10"],["Remada baixa no cabo",3,"10 a 12"],["Pulldown com corda (braço estendido)",3,"12 a 15"],["Rosca direta barra W",3,"10 a 12"],["Rosca inclinada com halteres",3,"10 a 12"]]],
+  C:["Pernas",[["Agachamento livre",4,"6 a 10"],["Leg press 45°",3,"10 a 12"],["Cadeira extensora",3,"12 a 15"],["Mesa flexora",3,"10 a 12"],["Stiff com halteres",3,"10 a 12"],["Panturrilha sentado (sóleo)",4,"12 a 15"]]],
+  D:["Ombros e abdômen",[["Desenvolvimento com halteres",4,"8 a 10"],["Elevação lateral com halteres",4,"12 a 15"],["Elevação frontal",3,"10 a 12"],["Crucifixo invertido na máquina",3,"12 a 15"],["Encolhimento com halteres",3,"10 a 12"],["Abdominal infra",3,"12 a 15"],["Prancha",3,"30 a 45 s"]]]}}
+];
+/* mesmo exercício da ficha do professor mantém o histórico */
+var SAME={"supino reto com barra":"supino","voador (peck deck)":"voador","elevação lateral com halteres":"abducao","tríceps polia alta (barra)":"triceps","leg press horizontal":"legpress","cadeira extensora":"extensora","panturrilha no leg press":"pant_lp","abdominal supra com carga":"abdominal","puxada frente aberta":"puxada","crucifixo invertido":"crucifixo","rosca na polia baixa":"rosca","mesa flexora":"flexora","panturrilha sentado (sóleo)":"solear","extensão lombar na mesa romana":"lombar"};
+function groupOf(n){var g=null;CATALOG.forEach(function(c){c[2].forEach(function(x){if(x.toLowerCase()===String(n).toLowerCase())g=c[0]})});return g||guessType(n)}
+function modelsCard(){
+  var f=ficha(),has=f&&f.order&&f.order.some(function(d){return f.days[d]&&f.days[d].items&&f.days[d].items.length});
+  var h='<section class="card" id="fmodels"><h2>Modelos prontos</h2><p class="mut" style="margin:6px 0 0;font-size:13px">Escolha um ponto de partida e ajuste depois como quiser. São sugestões gerais: confirme com o seu professor, principalmente se tiver dor ou lesão.</p>';
+  MODELS.forEach(function(m){
+    var ds=Object.keys(m.days);
+    h+='<details class="mdl"><summary><span><b>'+esc(m.nome)+'</b><br><span class="mut" style="font-size:13px">'+esc(m.freq)+'</span></span></summary>';
+    ds.forEach(function(d){h+='<div class="mdd"><b>Treino '+d+' · '+esc(m.days[d][0])+'</b>'+m.days[d][1].map(function(x){return'<div class="mdi">'+illSvg({k:"",n:x[0],t:groupOf(x[0])})+'<span>'+esc(x[0])+'<br><span class="mut">'+x[1]+' séries · '+esc(x[2])+'</span></span></div>'}).join("")+'</div>'});
+    h+='<button type="button" class="btn" data-act="fmodel" data-m="'+m.id+'">'+(st.cf==="m"+m.id?'Tocar de novo: substitui a sua ficha atual':'Usar este modelo')+'</button></details>';
+  });
+  return h+(has?'<p class="mut" style="font-size:12px;margin:10px 0 0">Usar um modelo substitui a ficha montada abaixo. O histórico dos exercícios não se perde.</p>':'')+'</section>';
+}
+function applyModel(m){
+  fMut(function(f,d){
+    f.name=m.nome.split(" – ")[0]+" – "+m.nome.split(" – ")[1];f.order=Object.keys(m.days);f.days={};
+    f.order.forEach(function(dd){var used={};f.days[dd]={label:m.days[dd][0],items:m.days[dd][1].map(function(x){var k=SAME[x[0].toLowerCase()]||("m"+(x[0].toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"")).slice(0,24));return{k:k,n:x[0],t:groupOf(x[0]),sets:x[1],reps:x[2]}})}});
+    d.useCustom=true;
+  });
+}
+
 /* ---------- montador de ficha ---------- */
 function fichaCard(){
   var f=ficha(),on=useCustom();
@@ -462,6 +509,7 @@ function drawBuilder(){
   var f=ficha()||{},on=useCustom(),ord=fLetters(),filled=ord.some(function(d){return f.days&&f.days[d]&&f.days[d].items&&f.days[d].items.length});
   var h='<button type="button" class="btn ghost" data-act="fback" style="margin-top:0;width:auto;padding:0 14px">← Voltar ao Painel</button>';
   h+='<section class="card"><h2>Qual ficha usar</h2><div class="energy" style="margin-top:10px"><button type="button" data-act="fuse" data-v="0" aria-pressed="'+(!on)+'">Do professor</button><button type="button" data-act="fuse" data-v="1" aria-pressed="'+on+'"'+(filled?'':' disabled')+'>Minha ficha</button></div><p class="mut" style="margin:10px 0 0;font-size:13px">Trocar de ficha não apaga nada. O histórico de cada exercício continua salvo e aparece na Evolução.</p></section>';
+  h+=modelsCard();
   h+='<section class="card"><h2>Minha ficha</h2><label class="f" style="margin-top:10px">Nome da ficha<input type="text" data-fb="name" maxlength="40" value="'+esc(f.name||"")+'" placeholder="ex.: Ficha 2 – hipertrofia"></label>';
   if(!filled)h+='<button type="button" class="btn ghost" data-act="fcopy">Começar com uma cópia da ficha do professor</button>';
   h+='<p class="mut" style="margin:10px 0 0;font-size:13px">Tudo é salvo na hora. Monte os treinos abaixo e depois toque em <b style="color:var(--ink)">Minha ficha</b> no quadro acima para usar.</p></section>';
@@ -509,6 +557,16 @@ function fClick(a,b){
     var base=null;Object.keys(EX0).forEach(function(z){EX0[z].forEach(function(x){if(x.n.toLowerCase()===nm.toLowerCase())base=x})});
     fMut(function(f){var dd=f.days[d2]=f.days[d2]||{label:"",items:[]};dd.items=dd.items||[];if(dd.items.some(function(z){return String(z.n).toLowerCase()===nm.toLowerCase()}))return;dd.items.push({k:base?base.k:fKey(),n:nm,t:b.dataset.g||guessType(nm),sets:3,reps:""})});
     render();var fp3=$("#fpick");if(fp3&&fp3.scrollIntoView)try{fp3.scrollIntoView({block:"start"})}catch(e){}return true;
+  }
+  if(a==="fmodel"){
+    var m=MODELS.filter(function(z){return z.id===b.dataset.m})[0];if(!m)return true;
+    var f0=ficha(),has=f0&&f0.order&&f0.order.some(function(d){return f0.days[d]&&f0.days[d].items&&f0.days[d].items.length});
+    var key="m"+m.id;
+    if(has&&st.cf!==key){st.cf=key;setTimeout(function(){if(st.cf===key){st.cf=null;render()}},4000);render();var mb=document.querySelector('button[data-act="fmodel"][data-m="'+m.id+'"]');if(mb){mb.closest("details").open=true;try{mb.scrollIntoView({block:"center"})}catch(e){}}return true}
+    st.cf=null;applyModel(m);st.fpd=null;render();
+    var fm=$("#fday-"+Object.keys(m.days)[0]);if(fm&&fm.scrollIntoView)try{fm.scrollIntoView({block:"start"})}catch(e){}
+    setStatus(m.nome.split(" – ")[0]+" carregado e em uso");setTimeout(baseStatus,3000);
+    return true;
   }
   if(a==="fmv"){var dd2=+b.dataset.d;fMut(function(f){var it=f.days[dy]&&f.days[dy].items;if(!it)return;var j=i+dd2;if(j<0||j>=it.length)return;var t=it[i];it[i]=it[j];it[j]=t});render();return true}
   if(a==="fdel"){fMut(function(f){var it=f.days[dy]&&f.days[dy].items;if(it)it.splice(i,1)});render();return true}
@@ -1057,7 +1115,7 @@ document.addEventListener("click",function(ev){
   if(b.dataset.w){st.xundo=null;st.week=+b.dataset.w;render();window.scrollTo(0,0);return}
   if(b.dataset.tab){st.xundo=null;st.fi=0;st.tab=b.dataset.tab;st.pdel=null;render();window.scrollTo(0,0);return}
   var a=b.dataset.act;if(!a)return;
-  if(/^f(openb|back|use|copy|add|dday|open|grp|pick|mv|del)$/.test(a)){if(loaded)fClick(a,b);return}
+  if(/^f(openb|back|use|copy|add|dday|open|grp|pick|mv|del|model)$/.test(a)){if(loaded)fClick(a,b);return}
   var day=st.tab,id=did(st.week,day);
   if(a==="login"||a==="signup"){doAuth(a);return}
   if(a==="rest-stop"){stopRest();return}
