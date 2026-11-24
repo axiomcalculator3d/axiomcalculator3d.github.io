@@ -81,8 +81,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .exh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .exh a,.exh .nm{font-family:var(--disp);font-size:22px;font-weight:600;text-transform:uppercase;line-height:1.05;color:var(--acc);text-decoration:underline;text-underline-offset:3px}
 .exh .nm{color:var(--ink);text-decoration:none}
-.tick{flex:0 0 auto;width:28px;height:28px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font-size:15px;color:transparent}
-.ex.done .tick{background:var(--ok);border-color:var(--ok);color:#fff}
+.tick{flex:0 0 auto;width:40px;height:40px;margin:-6px -6px 0 0;border-radius:50%;border:1.5px solid var(--line);background:transparent;display:grid;place-items:center;font-size:16px;color:var(--mut);opacity:.7;cursor:pointer;padding:0}
+.ex.done .tick{background:var(--ok);border-color:var(--ok);color:#fff;opacity:1}
 .meta{font-size:13px;color:var(--mut);margin-top:4px}
 .sug{margin-top:8px;font-size:13px;background:var(--soft);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .sug button{flex:0 0 auto;min-height:36px;border:1px solid var(--acc);color:var(--acc);background:transparent;border-radius:8px;padding:0 10px;font-weight:600;cursor:pointer}
@@ -285,7 +285,7 @@ function exCard(day,x){
   var w=st.week,id=did(w,day),doc=docs[id]||{},e=(doc.ex&&doc.ex[x.k])||{s:[["","",""],["","",""],["","",""]],rest:"",pain:"",variant:"",note:""};
   var p=PLAN[w-1],sg=suggestion(w,day,x.k),h="";
   h+='<section class="card ex'+(isDone(e)?" done":"")+'" data-k="'+x.k+'">';
-  h+='<div class="exh">'+(x.r?'<a href="'+REEL+x.r+'/" target="_blank" rel="noopener">'+esc(x.n)+'</a>':'<span class="nm">'+esc(x.n)+'</span>')+'<span class="tick" aria-hidden="true">✓</span></div>';
+  h+='<div class="exh">'+(x.r?'<a href="'+REEL+x.r+'/" target="_blank" rel="noopener">'+esc(x.n)+'</a>':'<span class="nm">'+esc(x.n)+'</span>')+'<button type="button" class="tick" data-act="conc" data-k="'+x.k+'" aria-pressed="'+(!!e.done)+'" aria-label="Marcar '+esc(x.n)+' como concluído com o padrão da ficha" title="Concluir com o padrão da ficha">✓</button></div>';
   h+='<div class="meta">3 séries · '+p[1]+' reps · descanso até 2 min'+(x.r?'':' · sem vídeo dele')+'</div>';
   if(sg){
     h+='<div class="sug"><span>Última carga: <b>'+fmt(sg.last.kg)+' kg</b> (sem. '+sg.last.w+')<br>'+(sg.keep?'Manter: <b>'+fmt(sg.lo)+' kg</b>':'Sugerido: <b>'+fmt(sg.lo)+(sg.hi>sg.lo?'–'+fmt(sg.hi):'')+' kg</b>')+'</span><button type="button" data-act="fill" data-k="'+x.k+'" data-v="'+sg.lo+'">Preencher</button></div>';
@@ -302,7 +302,6 @@ function exCard(day,x){
   h+='<label class="f">Dor<select data-k="'+x.k+'" data-f="pain">'+["","Sem dor","Leve","Moderada","Forte"].map(function(o){return'<option value="'+o+'"'+(e.pain===o?" selected":"")+'>'+(o||"–")+'</option>'}).join("")+'</select></label>';
   var vopts=[""].concat(x.v.map(function(v){return v[0]})).concat(["Outro"]);
   h+='<label class="f">Variação<select data-k="'+x.k+'" data-f="variant">'+vopts.map(function(o){return'<option value="'+esc(o)+'"'+(e.variant===o?" selected":"")+'>'+esc(o||"Da ficha")+'</option>'}).join("")+'</select></label></div>';
-  h+='<button type="button" class="btn'+(e.done?' ghost':'')+'" data-act="conc" data-k="'+x.k+'">'+(e.done?'Concluído ✓ (toque para desfazer)':'Marcar como concluído (padrão da ficha)')+'</button>';
   h+='<label class="f" style="margin-top:10px">Observação<textarea data-k="'+x.k+'" data-f="note" placeholder="Aparelho, ajuste do banco, sensação…">'+esc(e.note)+'</textarea></label>';
   h+='<div class="vars">'+(x.v.length?'Variações:':'Variações: sem vídeo dele')+x.v.map(function(v){return'<a href="'+REEL+v[1]+'/" target="_blank" rel="noopener">'+esc(v[0])+'</a>'}).join("")+'</div>';
   h+='</section>';
@@ -479,6 +478,13 @@ function refreshDerived(){
 
 /* ---------- eventos ---------- */
 function onField(t){
+  if(t.dataset.f==="set"&&t.dataset.j==="0"&&t.value!==""){
+    var k0=t.dataset.k,i0=+t.dataset.i;
+    for(var n=i0+1;n<3;n++){
+      var nx=document.querySelector('input[data-k="'+k0+'"][data-f="set"][data-i="'+n+'"][data-j="0"]');
+      if(nx&&nx.value===""){nx.value=t.value;nx.dataset.auto="1";mut(did(st.week,st.tab),function(d){exData(d,k0).s[n][0]=t.value})}
+    }
+  }
   var day=st.tab,id=did(st.week,day),k=t.dataset.k,f=t.dataset.f;
   mut(id,function(d){
     d.week=st.week;d.day=day;
