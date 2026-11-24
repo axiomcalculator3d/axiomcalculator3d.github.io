@@ -207,7 +207,7 @@ var ALL=EX.A.map(function(e){return{day:"A",e:e}}).concat(EX.B.map(function(e){r
 var MFIELDS=[["peso","Peso (kg)"],["gord","Gordura (%)"],["cintura","Cintura (cm)"],["quadril","Quadril (cm)"],["peito","Peito (cm)"],["ombros","Ombros (cm)"],["bracoD","Braço D (cm)"],["bracoE","Braço E (cm)"],["coxaD","Coxa D (cm)"],["coxaE","Coxa E (cm)"],["pant","Panturrilha (cm)"]];
 
 var $=function(s){return document.querySelector(s)};
-var st={fi:0,focus:false,pdp:null,week:1,tab:"D",pm:"max",pex:"A:supino",pdel:null};
+var st={cf:null,fi:0,focus:false,pdp:null,week:1,tab:"D",pm:"max",pex:"A:supino",pdel:null};
 var docs={},dirty={},ver={},timers={},chains={};
 var sb=null,uid=null,email="",loaded=false,offline=false;
 
@@ -325,6 +325,7 @@ function exCard(day,x){
   var vopts=[""].concat(x.v.map(function(v){return v[0]})).concat(["Outro"]);
   h+='<label class="f">Variação<select data-k="'+x.k+'" data-f="variant">'+vopts.map(function(o){return'<option value="'+esc(o)+'"'+(e.variant===o?" selected":"")+'>'+esc(o||"Da ficha")+'</option>'}).join("")+'</select></label></div>';
   h+='<label class="f" style="margin-top:10px">Observação<textarea data-k="'+x.k+'" data-f="note" placeholder="Aparelho, ajuste do banco, sensação…">'+esc(e.note)+'</textarea></label>';
+  h+='<div style="display:flex;justify-content:flex-end;margin-top:10px"><button type="button" class="btn del" data-act="clr" data-k="'+x.k+'">'+(st.cf==="x"+x.k?"Tocar de novo para limpar":"Limpar exercício")+'</button></div>';
   h+='<div class="vars">'+(x.v.length?'Variações:':'Variações: sem vídeo dele')+x.v.map(function(v){return'<a href="'+REEL+v[1]+'/" target="_blank" rel="noopener">'+esc(v[0])+'</a>'}).join("")+'</div>';
   h+='</section>';
   return h;
@@ -352,7 +353,7 @@ function drawWorkoutFull(day){
   h+='<label class="f">Aquecimento (min)<input class="n" type="text" inputmode="numeric" data-f="warm" value="'+esc(d.warm||"")+'"></label>';
   h+='<label class="f">Cardio (min)<input class="n" type="text" inputmode="numeric" data-f="cardio" value="'+esc(d.cardio||"")+'"></label></div>';
   h+='<div style="margin-top:12px"><span class="mut" style="font-size:12px">Energia (1 a 5)</span><div class="energy">'+[1,2,3,4,5].map(function(n){return'<button type="button" data-act="energy" data-v="'+n+'" aria-pressed="'+(String(d.energy)===String(n))+'">'+n+'</button>'}).join("")+'</div></div>';
-  h+='<label class="f" style="margin-top:12px">Como foi o dia<textarea data-f="dnote" placeholder="Humor, alimentação, intercorrências…">'+esc(d.dnote||"")+'</textarea></label></details>';
+  h+='<label class="f" style="margin-top:12px">Como foi o dia<textarea data-f="dnote" placeholder="Humor, alimentação, intercorrências…">'+esc(d.dnote||"")+'</textarea></label><div style="display:flex;justify-content:flex-end;margin-top:12px"><button type="button" class="btn del" data-act="clrday">'+(st.cf==="day"?"Tocar de novo para limpar o treino inteiro":"Limpar treino "+day+" desta semana")+'</button></div></details>';
   EX[day].forEach(function(x){h+=exCard(day,x)});
   return h;
 }
@@ -419,7 +420,7 @@ function drawProgress(){
   h+='<button type="button" class="btn ghost" data-act="csv">Baixar planilha (CSV)</button>';
   h+='<button type="button" class="btn ghost" data-act="backup">Baixar backup completo</button>';
   h+='<label class="btn ghost fbtn">Restaurar de um backup<input type="file" id="restore" accept=".json,application/json"></label>';
-  h+='<button type="button" class="btn ghost" data-act="logout">Sair da conta</button><div class="msg" id="acc-msg" role="status"></div></section>';
+  h+='<button type="button" class="btn ghost" data-act="logout">Sair da conta</button><button type="button" class="btn del" style="width:100%;margin-top:12px;min-height:46px" data-act="wipe">'+(st.cf==="wipe"?"Tocar de novo: apagar TUDO e sem volta":"Apagar todos os meus dados")+'</button><div class="msg" id="acc-msg" role="status"></div></section>';
   return h;
 }
 
@@ -799,10 +800,34 @@ document.addEventListener("click",function(ev){
       sb.storage.from("diario-fotos").remove([pp]).then(function(){mut("fotos",function(d){d.items=(d.items||[]).filter(function(x){return x.path!==pp})});render()}).catch(function(){phMsg("Não foi possível apagar a foto.",true)});
     }else{st.pdp=pp;setTimeout(function(){if(st.pdp===pp){st.pdp=null;if(st.tab==="M")render()}},3000);render()}
   }
+  else if(a==="clr"||a==="clrday"||a==="wipe"){
+    var key=a==="clr"?"x"+b.dataset.k:a==="clrday"?"day":"wipe";
+    if(st.cf!==key){st.cf=key;setTimeout(function(){if(st.cf===key){st.cf=null;render()}},3500);render();return}
+    st.cf=null;
+    if(a==="clr"){mut(id,function(d){if(d.ex)delete d.ex[b.dataset.k]});render()}
+    else if(a==="clrday"){put(id,{});render()}
+    else wipeAll();
+  }
   else if(a==="csv")exportCsv();
   else if(a==="backup")exportBackup();
   else if(a==="logout")logout();
 });
+function wipeAll(){
+  accMsg("Apagando…");
+  Object.keys(timers).forEach(function(k){clearTimeout(timers[k])});
+  var u=uid;
+  sb.storage.from("diario-fotos").list(u,{limit:1000}).then(function(r){
+    var ps=(r.data||[]).map(function(f){return u+"/"+f.name});
+    return ps.length?sb.storage.from("diario-fotos").remove(ps):null;
+  }).catch(function(){}).then(function(){
+    return sb.from("diario_docs").delete().eq("user_id",u);
+  }).then(function(r){
+    if(r&&r.error)throw r.error;
+    allIds().forEach(function(id){try{localStorage.removeItem("dt:"+u+":"+id)}catch(e){}});
+    docs={};dirty={};ver={};chains={};timers={};
+    render();accMsg("Todos os seus dados foram apagados.");
+  }).catch(function(){accMsg("Não foi possível apagar agora. Confira a internet e tente de novo.",true)});
+}
 function accMsg(t,err){var m=$("#acc-msg");if(m){m.textContent=t;m.className="msg"+(err?" err":"")}}
 function download(name,mime,text){
   var blob=new Blob([text],{type:mime}),a=document.createElement("a");
