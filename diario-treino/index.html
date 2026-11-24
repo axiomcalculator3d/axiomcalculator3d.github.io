@@ -111,6 +111,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .xls button .ill{width:64px;flex:0 0 auto}
 .xls button span{flex:1;min-width:0}
 .xls button small{display:block;font-size:12px;color:var(--ok);font-weight:600;margin-top:2px}
+.cbox{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
 .vbox{margin-top:10px;background:var(--soft);border-radius:10px;padding:10px}
 .vsrc{display:inline-block;margin-top:8px;color:var(--acc);font-weight:600;font-size:13px}
 .exh .xtag{flex:0 0 auto}
@@ -511,13 +512,14 @@ function drawWorkout(day){
 }
 function drawWorkoutFull(day){
   var id=did(st.week,day),d=docs[id]||{},h="";
+  var wb=weekBw(st.week),pb=null;for(var q=st.week-1;q>=1&&pb==null;q--)pb=weekBw(q);
+  h+='<section class="card"><div class="row" style="align-items:center"><h2>Peso da semana '+st.week+'</h2>'+(wb!=null&&pb!=null?'<span class="chip '+(wb<pb?'dn':wb>pb?'up':'')+'">'+(wb-pb>0?'+':'')+fmt(Math.round((wb-pb)*10)/10)+' kg</span>':'')+'</div><p class="mut" style="margin:6px 0 0;font-size:13px">Um registro por semana, de preferência em jejum. Vale para o Treino A e o B.</p><label class="f" style="margin-top:10px">Peso corporal (kg)<input class="n" type="text" inputmode="decimal" data-f="wbw" value="'+esc(wbRaw(st.week))+'"></label></section>';
   h+='<details class="card" open><summary>Dados do dia</summary>';
   h+='<div class="grid2"><label class="f">Data<input type="date" data-f="date" value="'+esc(d.date||"")+'"></label>';
-  h+='<label class="f">Peso corporal (kg)<input class="n" type="text" inputmode="decimal" data-f="bw" value="'+esc(d.bw||"")+'"></label>';
   h+='<label class="f">Sono (horas)<input class="n" type="text" inputmode="decimal" data-f="sleep" value="'+esc(d.sleep||"")+'"></label>';
   h+='<label class="f">Duração do treino (min)<input class="n" type="text" inputmode="numeric" data-f="dur" value="'+esc(d.dur||"")+'"></label>';
   h+='<label class="f">Aquecimento (min)<input class="n" type="text" inputmode="numeric" data-f="warm" value="'+esc(d.warm||"")+'"></label>';
-  h+='<label class="f">Cardio (min)<input class="n" type="text" inputmode="numeric" data-f="cardio" value="'+esc(d.cardio||"")+'"></label></div>';
+  h+='</div><div class="cbox"><b>Cardio</b><div class="grid3" style="margin-top:8px"><label class="f">Tipo<select data-f="ctype">'+["","Esteira","Corrida","Caminhada","Bicicleta","Elíptico","Escada","Remo","Outro"].map(function(o){return'<option value="'+o+'"'+((d.ctype||"")===o?" selected":"")+'>'+(o||"–")+'</option>'}).join("")+'</select></label><label class="f">Tempo (min)<input class="n" type="text" inputmode="numeric" data-f="cardio" value="'+esc(d.cardio||"")+'"></label><label class="f">Distância (km)<input class="n" type="text" inputmode="decimal" data-f="ckm" value="'+esc(d.ckm||"")+'"></label></div><div class="meta" id="cpace">'+paceText(d)+'</div></div>';
   h+='<div style="margin-top:12px"><span class="mut" style="font-size:12px">Energia (1 a 5)</span><div class="energy">'+[1,2,3,4,5].map(function(n){return'<button type="button" data-act="energy" data-v="'+n+'" aria-pressed="'+(String(d.energy)===String(n))+'">'+n+'</button>'}).join("")+'</div></div>';
   h+='<label class="f" style="margin-top:12px">Como foi o dia<textarea data-f="dnote" placeholder="Humor, alimentação, intercorrências…">'+esc(d.dnote||"")+'</textarea></label><div style="display:flex;justify-content:flex-end;margin-top:12px"><button type="button" class="btn del" data-act="clrday">'+(st.cf==="day"?"Tocar de novo para limpar o treino inteiro":"Limpar treino "+day+" desta semana")+'</button></div></details>';
   exList(day).forEach(function(x){h+=exCard(day,x)});
@@ -592,9 +594,22 @@ function drawProgress(){
 }
 
 function firstLast(ex){var f=null,l=null;for(var w=1;w<=12;w++){var m=maxKg(peek(w,ex.day,ex.e.k));if(m!=null&&m>0){if(!f)f={w:w,kg:m};l={w:w,kg:m}}}return f&&{f:f,l:l}}
+function wbRaw(w){var a=docs[did(w,"A")],b=docs[did(w,"B")];return(a&&a.bw)||(b&&b.bw)||""}
+function weekBw(w){return num(wbRaw(w))}
+function paceText(d){var m=num(d&&d.cardio),k=num(d&&d.ckm);if(m&&k)return'Velocidade média: <b>'+fmt(Math.round(k/m*600)/10)+' km/h</b> · ritmo '+(function(p){var mm=Math.floor(p),ss=Math.round((p-mm)*60);if(ss===60){mm++;ss=0}return mm+':'+(ss<10?'0':'')+ss})(m/k)+' min/km';if(m)return'Coloque a distância para ver a velocidade média.';return''}
+function cardioWeek(w){var t={min:0,km:0,n:0};["A","B"].forEach(function(d){var doc=docs[did(w,d)];if(!doc)return;var m=num(doc.cardio),k=num(doc.ckm);if(m||k){t.n++;t.min+=m||0;t.km+=k||0}});return t}
+function cardioCard(){
+  var tm=0,tk=0,tn=0,sk=[],sm=[];
+  for(var w=1;w<=12;w++){var c=cardioWeek(w);tm+=c.min;tk+=c.km;tn+=c.n;sk.push({w:w,v:c.n?c.km:null});sm.push({w:w,v:c.n?c.min:null})}
+  var h='<section class="card"><h2>Cardio</h2>';
+  if(!tn)return h+'<p class="mut" style="margin:8px 0 0">Nenhum cardio registrado ainda. Preencha tempo e distância em Dados do dia.</p></section>';
+  h+='<div class="kpis"><div class="kpi"><b>'+tn+'</b><span>Sessões</span></div><div class="kpi"><b>'+fmt(tm)+' min</b><span>Tempo total</span></div><div class="kpi"><b>'+(tk?fmt(Math.round(tk*10)/10)+' km':'–')+'</b><span>Distância total</span></div><div class="kpi"><b>'+(tk&&tm?fmt(Math.round(tk/tm*600)/10)+' km/h':'–')+'</b><span>Velocidade média</span></div></div>';
+  h+='<div class="meta" style="margin-top:10px">'+(tk?'Distância por semana (km)':'Tempo por semana (min)')+'</div>'+chartSvg(tk?sk:sm,tk?"km":"min");
+  return h+'</section>';
+}
 function bwSeries(){
   var pts=[];
-  for(var w=1;w<=12;w++)["A","B"].forEach(function(d){var doc=docs[did(w,d)];var v=doc&&num(doc.bw);if(v!=null)pts.push({w:w,v:v})});
+  for(var w=1;w<=12;w++){var v=weekBw(w);if(v!=null)pts.push({w:w,v:v})}
   var by={};pts.forEach(function(p){by[p.w]=p.v});
   return Array.apply(null,Array(12)).map(function(_,i){return{w:i+1,v:by[i+1]==null?null:by[i+1]}});
 }
@@ -639,6 +654,7 @@ function drawDash(){
   if(!gains.length)h+='<p class="mut" style="margin:8px 0 0">Registre cargas em pelo menos duas semanas para ver a evolução de cada exercício.</p>';
   else{h+='<div class="rank">';gains.forEach(function(g){h+='<div><span>'+esc(g.n)+'<br><span class="mut" style="font-size:12px;font-weight:400">'+fmt(g.a)+' → '+fmt(g.b)+' kg</span></span><span class="'+(g.d>=0?"pos":"neg")+'">'+(g.d>0?"+":"")+fmt(Math.round(g.p*10)/10)+'%</span></div>'});h+='</div>'}
   h+='</section>';
+  h+=cardioCard();
   h+=dashExtra();
   var list=mEntries();
   h+='<section class="card"><h2>Medidas</h2>';
@@ -887,12 +903,19 @@ function onField(t){
     }
   }
   var day=st.tab,id=did(st.week,day),k=t.dataset.k,f=t.dataset.f;
+  if(f==="wbw"){
+    var wk=st.week;
+    mut(did(wk,"A"),function(d){d.week=wk;d.day="A";d.bw=t.value});
+    var ob=docs[did(wk,"B")];if(ob&&ob.bw)mut(did(wk,"B"),function(d){delete d.bw});
+    refreshDerived();return;
+  }
   mut(id,function(d){
     d.week=st.week;d.day=day;
     if(k){var e=exData(d,k);if(f==="set")e.s[+t.dataset.i][+t.dataset.j]=t.value;else e[f]=t.value}
     else d[f]=t.value;
     if(!d.date&&f!=="date")d.date=today();
   });
+  if(f=="cardio"||f=="ckm"){var cp=$("#cpace");if(cp)cp.innerHTML=paceText(docs[id])}
   refreshDerived();
 }
 document.addEventListener("input",function(ev){
@@ -991,7 +1014,7 @@ document.addEventListener("click",function(ev){
     if(st.cf!==key){st.cf=key;setTimeout(function(){if(st.cf===key){st.cf=null;render()}},3500);render();return}
     st.cf=null;
     if(a==="clr"){mut(id,function(d){if(d.ex)delete d.ex[b.dataset.k];if(!dayHasEx(d))delete d.date});render()}
-    else if(a==="clrday"){put(id,{});render()}
+    else if(a==="clrday"){var kb=docs[id]&&docs[id].bw;put(id,kb?{week:st.week,day:day,bw:kb}:{});render()}
     else wipeAll();
   }
   else if(a==="addset"){
@@ -1078,14 +1101,14 @@ function download(name,mime,text){
 }
 function csvCell(v){v=v==null?"":String(v);return /[",;\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
 function exportCsv(){
-  var rows=[["Semana","Treino","Data","Exercício","Série","kg","Reps","RIR","Descanso (s)","Dor","Variação","Observação","Peso corporal","Sono (h)","Energia","Duração (min)","Aquecimento (min)","Cardio (min)"]];
+  var rows=[["Semana","Treino","Data","Exercício","Série","kg","Reps","RIR","Descanso (s)","Dor","Variação","Observação","Peso da semana (kg)","Sono (h)","Energia","Duração (min)","Aquecimento (min)","Cardio (min)","Cardio tipo","Cardio distância (km)"]];
   for(var w=1;w<=12;w++)["A","B"].forEach(function(day){
     var d=docs[did(w,day)];if(!d)return;
     EX[day].concat(swapHist(day)).concat(extras(day,true)).forEach(function(x){
       var e=d.ex&&d.ex[x.k];if(!e)return;
       e.s.forEach(function(s,i){
         if(s[0]===""&&s[1]===""&&s[2]==="")return;
-        rows.push([w,day,d.date||"",x.n,i+1,s[0],s[1],s[2],e.rest,e.pain,e.variant,e.note,d.bw||"",d.sleep||"",d.energy||"",d.dur||"",d.warm||"",d.cardio||""]);
+        rows.push([w,day,d.date||"",x.n,i+1,s[0],s[1],s[2],e.rest,e.pain,e.variant,e.note,wbRaw(w),d.sleep||"",d.energy||"",d.dur||"",d.warm||"",d.cardio||"",d.ctype||"",d.ckm||""]);
       });
     });
   });
