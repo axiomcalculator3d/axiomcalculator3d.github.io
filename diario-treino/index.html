@@ -255,7 +255,7 @@ function peek(w,day,k){var d=docs[did(w,day)];return d&&d.ex&&d.ex[k]?d.ex[k]:nu
 function maxKg(e){if(!e)return null;var m=null;e.s.forEach(function(s){var n=num(s[0]);if(n!=null&&(m==null||n>m))m=n});return m}
 function vol(e){if(!e)return null;var t=0,any=false;e.s.forEach(function(s){var a=num(s[0]),b=num(s[1]);if(a!=null&&b!=null){t+=a*b;any=true}});return any?t:null}
 function repsTot(e){if(!e)return null;var t=0,any=false;e.s.forEach(function(s){var b=num(s[1]);if(b!=null){t+=b;any=true}});return any?t:null}
-function isDone(e){return !!e&&e.s.every(function(s){return s[0]!==""&&s[1]!==""})}
+function isDone(e){return !!e&&(!!e.done||e.s.every(function(s){return s[0]!==""&&s[1]!==""}))}
 function lastLogged(w,day,k){for(var x=w-1;x>=1;x--){var m=maxKg(peek(x,day,k));if(m!=null&&m>0)return{w:x,kg:m}}return null}
 function suggestion(w,day,k){
   var last=lastLogged(w,day,k);if(!last)return null;
@@ -302,6 +302,7 @@ function exCard(day,x){
   h+='<label class="f">Dor<select data-k="'+x.k+'" data-f="pain">'+["","Sem dor","Leve","Moderada","Forte"].map(function(o){return'<option value="'+o+'"'+(e.pain===o?" selected":"")+'>'+(o||"–")+'</option>'}).join("")+'</select></label>';
   var vopts=[""].concat(x.v.map(function(v){return v[0]})).concat(["Outro"]);
   h+='<label class="f">Variação<select data-k="'+x.k+'" data-f="variant">'+vopts.map(function(o){return'<option value="'+esc(o)+'"'+(e.variant===o?" selected":"")+'>'+esc(o||"Da ficha")+'</option>'}).join("")+'</select></label></div>';
+  h+='<button type="button" class="btn'+(e.done?' ghost':'')+'" data-act="conc" data-k="'+x.k+'">'+(e.done?'Concluído ✓ (toque para desfazer)':'Marcar como concluído (padrão da ficha)')+'</button>';
   h+='<label class="f" style="margin-top:10px">Observação<textarea data-k="'+x.k+'" data-f="note" placeholder="Aparelho, ajuste do banco, sensação…">'+esc(e.note)+'</textarea></label>';
   h+='<div class="vars">'+(x.v.length?'Variações:':'Variações: sem vídeo dele')+x.v.map(function(v){return'<a href="'+REEL+v[1]+'/" target="_blank" rel="noopener">'+esc(v[0])+'</a>'}).join("")+'</div>';
   h+='</section>';
@@ -509,6 +510,22 @@ document.addEventListener("click",function(ev){
   if(a==="login"||a==="signup"){doAuth(a);return}
   if(!loaded)return;
   if(a==="energy"){mut(id,function(d){d.week=st.week;d.day=day;d.energy=b.dataset.v;if(!d.date)d.date=today()});render()}
+  else if(a==="conc"){
+    var cx=ALL.filter(function(z){return z.day===day&&z.e.k===b.dataset.k})[0];
+    var csg=suggestion(st.week,day,b.dataset.k),lo=String(PLAN[st.week-1][1]).split(" ")[0];
+    mut(id,function(d){
+      d.week=st.week;d.day=day;var e=exData(d,b.dataset.k);
+      if(e.done){e.done=false;return}
+      e.done=true;
+      e.s.forEach(function(s){
+        if(s[0]===""&&csg)s[0]=String(csg.lo).replace(".",",");
+        if(s[1]==="")s[1]=lo;
+      });
+      if(e.rest==="")e.rest="120";
+      if(!d.date)d.date=today();
+    });
+    render();
+  }
   else if(a==="fill"){
     mut(id,function(d){d.week=st.week;d.day=day;var e=exData(d,b.dataset.k);e.s.forEach(function(s){if(s[0]==="")s[0]=String(b.dataset.v).replace(".",",")});if(!d.date)d.date=today()});
     render();
