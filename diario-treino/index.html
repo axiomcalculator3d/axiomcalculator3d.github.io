@@ -531,6 +531,12 @@ function calGrid(){
   });
   return h+'</div><p class="mut" style="font-size:12px;margin:8px 0 0">Verde forte: treino completo. Verde claro: treino começado.</p>';
 }
+function restCard(){
+  var cur=defRest(),h='<section class="card"><h2>Cronômetro de descanso</h2><p class="mut" style="margin:6px 0 0;font-size:13px">Tempo padrão do botão ⏱ e dos exercícios sem descanso preenchido. Agora: <b style="color:var(--ink)">'+fmtT(cur)+'</b></p><div class="chips" style="margin-top:10px">';
+  [45,60,90,120,150,180,240,300].forEach(function(v){h+='<button type="button" class="wk" style="min-width:64px;padding:0 10px" data-act="setrest" data-v="'+v+'" aria-pressed="'+(cur===v)+'">'+fmtT(v)+'</button>'});
+  h+='</div><label class="f" style="margin-top:12px">Outro valor (segundos)<input class="n" type="text" inputmode="numeric" id="r-sec" placeholder="ex.: 75"></label></section>';
+  return h;
+}
 function reminderCard(){
   var r=(docs.settings&&docs.settings.remind)||{on:false,time:"18:00"};
   return '<section class="card"><h2>Lembrete de treino</h2><div class="grid2"><label class="f">Horário<input type="time" id="r-time" value="'+esc(r.time||"18:00")+'"></label><div style="display:flex;align-items:flex-end"><button type="button" class="btn'+(r.on?'':' ghost')+'" style="margin:0" data-act="remind">'+(r.on?'Ligado ✓':'Ligar lembrete')+'</button></div></div><p class="mut" style="font-size:12px;margin:10px 0 0">Avisa se você ainda não registrou treino no dia. Funciona com o app aberto ou em segundo plano recente. O celular pode suspender o aviso quando o app fica muito tempo fechado.</p></section>';
@@ -546,7 +552,7 @@ function dashExtra(){
   h+='<section class="card"><h2>Cargas travadas</h2>';
   if(!st2.length)h+='<p class="mut" style="margin:8px 0 0">Nenhum exercício sem subir carga. Continue assim.</p>';
   else{h+='<div class="meta">Exercícios que não subiram nas últimas semanas: tente a variação ou revise a técnica.</div><div class="rank">';st2.forEach(function(p){h+='<div><span>'+esc(p.n)+'</span><span class="neg">'+fmt(p.kg)+' kg · '+p.c+' sem.</span></div>'});h+='</div>'}
-  h+='</section>'+reminderCard();
+  h+='</section>'+restCard()+reminderCard();
   return h;
 }
 
@@ -558,11 +564,12 @@ function alarm(){
   try{var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;var c=new AC(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=.15;o.start();o.stop(c.currentTime+.6)}catch(e){}
 }
 function restBox(){return $("#rest")}
+function defRest(){var v=docs.settings&&+docs.settings.rest;return v>=5&&v<=900?v:120}
 function startRest(sec){
   clearInterval(rt.iv);clearTimeout(rt.hide);
   rt.end=Date.now()+sec*1000;
   var b=restBox();b.className="rest";b.hidden=false;
-  b.innerHTML='<span class="mut" style="color:inherit;opacity:.8;font-size:12px">Descanso</span><b id="rest-t">'+fmtT(sec)+'</b><button type="button" data-act="rest-add">+30s</button><button type="button" data-act="rest-stop">Parar</button>';
+  b.innerHTML='<span class="mut" style="color:inherit;opacity:.8;font-size:12px">Descanso</span><b id="rest-t">'+fmtT(sec)+'</b><button type="button" data-act="rest-add" data-v="-15">−15s</button><button type="button" data-act="rest-add" data-v="15">+15s</button><button type="button" data-act="rest-stop">Parar</button>';
   rt.iv=setInterval(tickRest,250);
 }
 function tickRest(){
@@ -578,7 +585,7 @@ function maybeRest(t){
   var kg=document.querySelector('input[data-k="'+t.dataset.k+'"][data-f="set"][data-i="'+i+'"][data-j="0"]');
   if(!kg||kg.value==="")return;
   var re=document.querySelector('input[data-k="'+t.dataset.k+'"][data-f="rest"]');
-  var sec=re&&num(re.value)?Math.round(num(re.value)):120;
+  var sec=re&&num(re.value)?Math.round(num(re.value)):defRest();
   startRest(Math.max(15,Math.min(600,sec)));
 }
 
@@ -727,6 +734,7 @@ document.addEventListener("input",function(ev){
 document.addEventListener("change",function(ev){
   var t=ev.target;
   if(t.dataset&&t.dataset.f==="set"&&t.dataset.j==="1"&&t.value!==""&&(st.tab==="A"||st.tab==="B"))maybeRest(t);
+  if(t.id==="r-sec"&&loaded){var sv=Math.round(num(t.value)||0);if(sv>=5&&sv<=900){mut("settings",function(d){d.rest=sv});render()}}
   if(t.id==="r-time"&&loaded){mut("settings",function(d){d.remind=d.remind||{on:false};d.remind.time=t.value})}
   if(t.id==="photo"&&t.files&&t.files[0]&&loaded){uploadPhoto(t.files[0]);return}
   if(t.id==="p-ex"){st.pex=t.value;drawChart()}
@@ -744,8 +752,9 @@ document.addEventListener("click",function(ev){
   var day=st.tab,id=did(st.week,day);
   if(a==="login"||a==="signup"){doAuth(a);return}
   if(a==="rest-stop"){stopRest();return}
-  if(a==="rest-start"){if(!restBox().hidden&&rt.iv)stopRest();else startRest(120);return}
-  if(a==="rest-add"){var l=Math.max(0,Math.ceil((rt.end-Date.now())/1000))+30;startRest(l);return}
+  if(a==="setrest"){mut("settings",function(d){d.rest=+b.dataset.v});render();return}
+  if(a==="rest-start"){if(!restBox().hidden&&rt.iv)stopRest();else startRest(defRest());return}
+  if(a==="rest-add"){var l=Math.max(5,Math.ceil((rt.end-Date.now())/1000)+(+b.dataset.v));startRest(l);return}
   if(!loaded)return;
   if(a==="energy"){mut(id,function(d){d.week=st.week;d.day=day;d.energy=b.dataset.v;if(!d.date)d.date=today()});render()}
   else if(a==="conc"){
