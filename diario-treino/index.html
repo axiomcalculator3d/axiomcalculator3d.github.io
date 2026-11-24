@@ -286,7 +286,8 @@ function suggestion(w,day,k){
 }
 function planText(w){var p=PLAN[w-1];return p[2]==="up"?"Aumentar as cargas de 5% a 10%":p[2]==="keep"?"Manter as cargas da semana "+p[3]:"Semana de partida: ache cargas que fechem as repetições"}
 function countDone(w,day){var n=0;EX[day].forEach(function(x){if(isDone(peek(w,day,x.k)))n++});return n}
-function weekHas(w){return ["A","B"].some(function(d){var doc=docs[did(w,d)];if(!doc)return false;if(doc.date||doc.bw)return true;return EX[d].some(function(x){var e=peek(w,d,x.k);return e&&e.s.some(function(s){return s[0]!==""||s[1]!==""})})})}
+function dayHasEx(doc){if(!doc||!doc.ex)return false;return Object.keys(doc.ex).some(function(k){var e=doc.ex[k];return e&&(e.done||e.s.some(function(s){return s[0]!==""||s[1]!==""||s[2]!==""}))})}
+function weekHas(w){return ["A","B"].some(function(d){var doc=docs[did(w,d)];if(!doc)return false;if(dayHasEx(doc)||doc.bw)return true;return EX[d].some(function(x){var e=peek(w,d,x.k);return e&&e.s.some(function(s){return s[0]!==""||s[1]!==""})})})}
 
 /* ---------- desenho ---------- */
 function drawWeeks(){
@@ -524,7 +525,7 @@ function calGrid(){
     h+='<span>'+d+'</span>';
     for(var w2=1;w2<=12;w2++){
       var n=countDone(w2,d),any=false,doc=docs[did(w2,d)];
-      if(doc&&doc.date)any=true;
+      if(dayHasEx(doc))any=true;
       var c=n>=EX[d].length?"c2":(n>0||any)?"c1":"";
       h+='<i class="'+c+'" title="Semana '+w2+' treino '+d+': '+n+' de '+EX[d].length+'"></i>';
     }
@@ -646,7 +647,7 @@ function loadPhotos(){
 }
 
 /* ---------- lembrete ---------- */
-function workedToday(){var t=today();for(var w=1;w<=12;w++){var a=docs[did(w,"A")],b=docs[did(w,"B")];if((a&&a.date===t)||(b&&b.date===t))return true}return false}
+function workedToday(){var t=today();for(var w=1;w<=12;w++){var a=docs[did(w,"A")],b=docs[did(w,"B")];if((a&&a.date===t&&dayHasEx(a))||(b&&b.date===t&&dayHasEx(b)))return true}return false}
 function remindTick(){
   if(!uid||!loaded)return;
   var r=docs.settings&&docs.settings.remind;if(!r||!r.on||!r.time)return;
@@ -813,7 +814,7 @@ document.addEventListener("click",function(ev){
     var key=a==="clr"?"x"+b.dataset.k:a==="clrday"?"day":"wipe";
     if(st.cf!==key){st.cf=key;setTimeout(function(){if(st.cf===key){st.cf=null;render()}},3500);render();return}
     st.cf=null;
-    if(a==="clr"){mut(id,function(d){if(d.ex)delete d.ex[b.dataset.k]});render()}
+    if(a==="clr"){mut(id,function(d){if(d.ex)delete d.ex[b.dataset.k];if(!dayHasEx(d))delete d.date});render()}
     else if(a==="clrday"){put(id,{});render()}
     else wipeAll();
   }
