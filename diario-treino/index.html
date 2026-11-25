@@ -185,6 +185,22 @@ td.up{color:var(--ok);font-weight:600}
 .ctip{font-size:13px;min-height:18px;margin-top:4px;font-weight:600}
 .chw{margin-top:6px}
 .evr[aria-current] .evn b{color:var(--acc)}
+.mfig{width:64px;height:128px;flex:0 0 auto;background:var(--bg);border-radius:8px}
+.mfig .mb{fill:var(--line)}
+.mfig .ml{fill:none;stroke:var(--line);stroke-width:8;stroke-linecap:round}
+.mfig .mg{fill:none;stroke:var(--line);stroke-width:11;stroke-linecap:round}
+.mfig .mt{fill:none;stroke:var(--warn);stroke-width:2.6}
+.mfig .ms{fill:var(--warn)}
+.mfig .mtx{fill:#fff;font-size:6px;font-weight:700}
+.mfig .mp{stroke:var(--warn);stroke-width:2.4;stroke-linecap:round}
+.mfig .mpd{fill:var(--warn)}
+.mgd summary::after{content:"+"}
+.mgi{display:flex;gap:12px;align-items:center;border-top:1px solid var(--line);padding:10px 0;margin-top:10px}
+.mgi b{font-size:15px}
+.mgi p{margin:4px 0 0;font-size:13px;color:var(--mut);line-height:1.4}
+.mfl{align-items:center;text-align:center}
+.mfl .mfig{width:44px;height:88px}
+.mfl span{font-size:12px}
 .pvt{margin:0 0 12px}
 .evl{display:flex;flex-direction:column;margin-top:8px}
 .evr{display:grid;grid-template-columns:1fr 96px 112px;gap:10px;align-items:center;border:0;border-top:1px solid var(--line);background:transparent;padding:10px 0;text-align:left;cursor:pointer;color:inherit;font-size:14px}
@@ -804,9 +820,40 @@ function drawWorkoutFull(day){
   return h;
 }
 function mEntries(){var m=docs.measures;return(m&&m.entries?m.entries.slice():[]).sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:(b.t||0)-(a.t||0)})}
+/* ---------- como medir: figura com a posição da fita ---------- */
+var MHOW={
+ peso:"De manhã, em jejum, depois de ir ao banheiro, com pouca roupa e sempre na mesma balança.",
+ gord:"Use sempre o mesmo método: a mesma balança de bioimpedância ou o adipômetro com o professor, no mesmo horário.",
+ cintura:"Na altura do umbigo, fita reta em volta da barriga relaxada, no fim de uma expiração normal. Não encolha a barriga.",
+ quadril:"Na parte mais saliente do bumbum, de pé e com os pés juntos.",
+ peito:"Na linha dos mamilos, por baixo das axilas, braços relaxados, no fim de uma expiração normal.",
+ ombros:"Na parte mais larga dos ombros, passando por cima dos deltoides, com os braços soltos ao lado do corpo.",
+ bracoD:"Braço direito, no meio entre o ombro e o cotovelo, na parte mais grossa. Escolha medir contraído ou relaxado e mantenha sempre igual.",
+ bracoE:"Braço esquerdo, no mesmo ponto e do mesmo jeito do braço direito (contraído ou relaxado).",
+ coxaD:"Coxa direita, na parte mais grossa, logo abaixo do bumbum, de pé, com o peso dividido nas duas pernas.",
+ coxaE:"Coxa esquerda, no mesmo ponto da coxa direita.",
+ pant:"Na parte mais grossa da panturrilha, de pé, com o peso dividido nas duas pernas. Meça sempre a mesma perna."
+};
+function measFig(k){
+  var body='<circle cx="50" cy="17" r="9" class="mb"/><rect x="46" y="25" width="8" height="8" rx="2" class="mb"/>'+
+   '<path class="mb" d="M30 36 Q50 31 70 36 L66 70 Q63 86 64 96 L67 112 L33 112 L36 96 Q37 86 34 70 Z"/>'+
+   '<path class="ml" d="M31 39 L25 74 L22 108"/><path class="ml" d="M69 39 L75 74 L78 108"/>'+
+   '<path class="mg" d="M41 110 L40 150 L41 190"/><path class="mg" d="M59 110 L60 150 L59 190"/>';
+  var T={peito:[50,53,21,3],ombros:[50,40,26,3.2],cintura:[50,84,14,2.6],quadril:[50,105,19,3],bracoD:[27.5,58,6.5,2],bracoE:[72.5,58,6.5,2],coxaD:[40.5,124,7.5,2.2],coxaE:[59.5,124,7.5,2.2],pant:[40.3,160,5.5,2]};
+  var x="";
+  if(T[k]){var t=T[k];x='<ellipse class="mt" cx="'+t[0]+'" cy="'+t[1]+'" rx="'+t[2]+'" ry="'+t[3]+'"/>'}
+  else if(k==="peso")x='<rect class="ms" x="28" y="191" width="44" height="7" rx="2"/><text x="50" y="197" class="mtx" text-anchor="middle">kg</text>';
+  else if(k==="gord")x='<path class="mp" d="M63 80 L71 77 M63 88 L71 91"/><circle class="mpd" cx="62" cy="84" r="2.2"/>';
+  return'<svg class="mfig" viewBox="0 0 100 200" role="img" aria-label="Onde medir: '+esc((MFIELDS.filter(function(f){return f[0]===k})[0]||["",""])[1])+'">'+body+x+'</svg>';
+}
+function measGuide(){
+  var h='<details class="card mgd"'+(mEntries().length?'':' open')+'><summary>Como tirar cada medida</summary><p class="mut" style="margin:8px 0 0;font-size:13px">Use uma fita métrica de costura, encostada na pele sem apertar. Meça sempre no mesmo horário, de preferência de manhã, antes de treinar, e do mesmo lado do corpo.</p>';
+  MFIELDS.forEach(function(f){h+='<div class="mgi">'+measFig(f[0])+'<div><b>'+esc(f[1])+'</b><p>'+esc(MHOW[f[0]]||"")+'</p></div></div>'});
+  return h+'</details>';
+}
 function drawMeasures(){
-  var h='<section class="card"><h2>Nova medição</h2><div class="grid2"><label class="f" style="grid-column:1/-1">Data<input type="date" id="m-date" value="'+today()+'"></label>';
-  MFIELDS.forEach(function(f){h+='<label class="f">'+f[1]+'<input class="n" type="text" inputmode="decimal" id="m-'+f[0]+'" autocomplete="off"></label>'});
+  var h=measGuide()+'<section class="card"><h2>Nova medição</h2><div class="grid2"><label class="f" style="grid-column:1/-1">Data<input type="date" id="m-date" value="'+today()+'"></label>';
+  MFIELDS.forEach(function(f){h+='<label class="f mfl">'+measFig(f[0])+'<span>'+f[1]+'</span><input class="n" type="text" inputmode="decimal" id="m-'+f[0]+'" autocomplete="off"></label>'});
   h+='</div><button type="button" class="btn" data-act="madd">Salvar medição</button></section>';
   var list=mEntries();
   h+='<section class="card"><h2>Histórico</h2>';
