@@ -272,7 +272,7 @@ function useCustom(){var f=ficha();return !!(f&&f.order&&f.days&&f.order.some(fu
 function syncEX(){
   if(!useCustom()){EX=EX0;return}
   var f=ficha(),o={};
-  f.order.forEach(function(d){var dd=f.days[d];if(!dd||!dd.items||!dd.items.length)return;o[d]=dd.items.filter(function(x){return x&&x.k&&x.n}).map(function(x){var o0=null;["A","B"].forEach(function(z){EX0[z].forEach(function(y){if(y.k===x.k)o0=y})});return{k:x.k,n:x.n,t:x.t,r:vidFor(x.n)||(o0&&o0.r)||null,v:o0?o0.v:[],sets:Math.max(1,Math.min(8,+x.sets||3)),reps:String(x.reps||"").trim(),cust:1}})});
+  f.order.forEach(function(d){var dd=f.days[d];if(!dd||!dd.items||!dd.items.length)return;o[d]=dd.items.filter(function(x){return x&&x.k&&x.n}).map(function(x){var o0=null;["A","B"].forEach(function(z){EX0[z].forEach(function(y){if(y.k===x.k)o0=y})});return{k:x.k,n:x.n,t:x.t,r:vidFor(x.n)||(o0&&o0.r)||null,v:(o0?o0.v:[]).concat(varsFor(x.n)),sets:Math.max(1,Math.min(8,+x.sets||3)),reps:String(x.reps||"").trim(),cust:1}})});
   EX=Object.keys(o).length?o:EX0;
 }
 function DAYS(){return Object.keys(EX)}
@@ -419,6 +419,9 @@ var VID={"supino reto com barra":"DaS-miuoAp_","supino reto com halteres":"C3kJP
 var VID2={"elevação lateral na máquina":"DfH2BZVIfQx","rosca de punho":"DecTyLNCGCL","elevação pélvica (hip thrust)":"Df4fFPPobxk","desenvolvimento com halteres":"DfHYC66owk5","agachamento goblet":"De_uBzqiYYp","leg press 45°":"DfAiUvhiaKQ","agachamento búlgaro":"DeZQEJmCuVP","elevação lateral na polia":"DeYvg5viMzm","agachamento no smith":"DeUdrkICGdX","abdominal supra":"DeOfS2-CLWI"};
 var ALT={};Object.keys(VID2).forEach(function(k){ALT[VID2[k]]=1});
 function vidFor(n){var k=String(n||"").toLowerCase();return VID[k]||VID2[k]||null}
+/* outras opções de execução (código do reel) */
+var VARS={"rosca scott":[["Rosca sentado com halter (opção da Scott)","Df95gmLRz0Y"]]};
+function varsFor(n){return(VARS[String(n||"").toLowerCase()]||[]).slice()}
 function vidSrc(code){return code&&ALT[code]?"@getultraplus":"@alexeysmirnov__"}
 function hrefOf(x){return x.u?x.u:x.r?REEL+x.r+"/":null}
 function cleanUrl(u){u=String(u||"").trim();var m=u.match(/https?:\/\/(www\.)?(instagram\.com|youtube\.com|youtu\.be|m\.youtube\.com)\/[^\s"'<>]+/i);return m?m[0]:""}
@@ -431,7 +434,7 @@ function illSvg(x,big){return'<img class="ill'+(big?' big':'')+'" src="img/'+img
 /* ---------- exercícios extras do próprio usuário ---------- */
 function extras(day,withOff){
   var s=docs.settings&&docs.settings.extra&&docs.settings.extra[day];
-  return(Array.isArray(s)?s:[]).filter(function(x){return x&&x.k&&x.n&&(withOff||!x.off)}).map(function(x){return{k:x.k,n:x.n,t:x.t,r:vidFor(x.n),u:cleanUrl(x.u)||null,v:[],x:true}});
+  return(Array.isArray(s)?s:[]).filter(function(x){return x&&x.k&&x.n&&(withOff||!x.off)}).map(function(x){return{k:x.k,n:x.n,t:x.t,r:vidFor(x.n),u:cleanUrl(x.u)||null,v:varsFor(x.n),x:true}});
 }
 /* trocas: settings.swap[day]=[{o:chave original,k:chave nova,n,t,from:semana}]; k===o volta ao original */
 function swaps(day){var s=docs.settings&&docs.settings.swap&&docs.settings.swap[day];return Array.isArray(s)?s.filter(function(z){return z&&z.o&&z.k}):[]}
@@ -441,7 +444,7 @@ function slots(day,w){
     var cur=null;sw.forEach(function(z){if(z.o===x.k&&(z.from||1)<=w&&(!cur||(z.from||1)>=(cur.from||1)))cur=z});
     if(!cur||cur.k===x.k)return x;
     if(cur.k==="-")return null;
-    var lu=null;sw.forEach(function(z){if(z.k===cur.k&&z.u)lu=cleanUrl(z.u)||lu});return{k:cur.k,n:cur.n,t:cur.t,r:vidFor(cur.n),u:lu,v:[],sw:x.k,orig:x.n,from:cur.from||1};
+    var lu=null;sw.forEach(function(z){if(z.k===cur.k&&z.u)lu=cleanUrl(z.u)||lu});return{k:cur.k,n:cur.n,t:cur.t,r:vidFor(cur.n),u:lu,v:varsFor(cur.n),sw:x.k,orig:x.n,from:cur.from||1};
   }).filter(Boolean);
 }
 function swapHist(day){var seen={},out=[];swaps(day).forEach(function(z){if(z.k!==z.o&&z.k!=="-"&&!seen[z.k]){seen[z.k]=1;out.push({k:z.k,n:z.n,t:z.t,r:null,v:[],sw:z.o})}});return out}
@@ -712,6 +715,7 @@ function exCard(day,x,big){
     h+='<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px">'+(x.sw?'<button type="button" class="btn del" style="color:var(--acc)" data-act="swundo" data-o="'+x.sw+'">Voltar para '+esc(x.orig)+'</button>':'')+'<button type="button" class="btn del" data-act="swhide" data-o="'+(x.sw||x.k)+'">Tirar da ficha</button><button type="button" class="btn del" style="color:var(--acc)" data-act="swopen" data-o="'+(x.sw||x.k)+'" data-n="'+esc(x.orig||x.n)+'">'+(st.swk===(x.sw||x.k)?'Fechar troca':'Trocar exercício')+'</button></div>';
     if(st.swk===(x.sw||x.k))h+=swapBox(day,x);
   }
+  if(x.x&&x.v.length)h+='<div class="vars">Variações:'+x.v.map(function(v){return'<a href="'+REEL+v[1]+'/" target="_blank" rel="noopener">'+esc(v[0])+'</a>'}).join("")+'</div>';
   if(x.x)h+='<div style="display:flex;justify-content:flex-end;margin-top:8px"><button type="button" class="btn del" data-act="xdel" data-k="'+x.k+'">'+'Tirar exercício extra da ficha'+'</button></div>';
   else h+='<div class="vars">'+(x.v.length?'Variações:':'Variações: sem vídeo dele')+x.v.map(function(v){return'<a href="'+REEL+v[1]+'/" target="_blank" rel="noopener">'+esc(v[0])+'</a>'}).join("")+'</div>';
   h+='</section>';
