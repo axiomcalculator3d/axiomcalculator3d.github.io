@@ -184,9 +184,10 @@ td.up{color:var(--ok);font-weight:600}
 .svgc .hit.on{fill:var(--acc);opacity:.18}
 .ctip{font-size:13px;min-height:18px;margin-top:4px;font-weight:600}
 .chw{margin-top:6px}
+.evr[aria-current] .evn b{color:var(--acc)}
 .pvt{margin:0 0 12px}
 .evl{display:flex;flex-direction:column;margin-top:8px}
-.evr{display:grid;grid-template-columns:1fr 96px auto;gap:10px;align-items:center;border:0;border-top:1px solid var(--line);background:transparent;padding:10px 0;text-align:left;cursor:pointer;color:inherit;font-size:14px}
+.evr{display:grid;grid-template-columns:1fr 96px 112px;gap:10px;align-items:center;border:0;border-top:1px solid var(--line);background:transparent;padding:10px 0;text-align:left;cursor:pointer;color:inherit;font-size:14px}
 .evn{display:flex;flex-direction:column;min-width:0}
 .evn b{line-height:1.25}
 .evn .mut{font-size:12px}
@@ -854,7 +855,7 @@ function chartSvg(series,unit,opt){
   });
   pts.forEach(function(q){s+='<circle class="hit" cx="'+X(q.w)+'" cy="'+Y(q.v)+'" r="14" data-tip="'+(opt.labels?esc(opt.labels[q.w-1]):'Semana '+q.w)+': '+fmt(q.v)+' '+esc(unit)+(q.d?' · '+esc(q.d):'')+'"/>'});
   for(var w=1;w<=NL;w++){if(NL>8&&w%2===0&&w!==NL)continue;var an=opt.labels&&NL>1?(w===1?"start":w===NL?"end":"middle"):"middle";s+='<text x="'+(X(w)+(an==="start"?-8:an==="end"?8:0))+'" y="'+(H-8)+'" text-anchor="'+an+'">'+(opt.labels?esc(opt.labels[w-1]):w)+'</text>'}
-  s+='</svg><div class="ctip mut">Toque num ponto para ver o valor '+(opt.labels?'do mês':'da semana')+'.</div></div>';
+  s+='</svg><div class="ctip mut">Toque num ponto para ver o valor'+(opt.labels?'':' da semana')+'.</div></div>';
   return s;
 }
 function spark(vals){
@@ -874,6 +875,30 @@ function monthsAll(){var ms={};allSess().forEach(function(z){ms[z.m]=1});var k=O
 function mMetric(day,k,m,met){var v=null;allSess().forEach(function(z){if(z.day!==day||z.m!==m)return;var e=z.doc.ex&&z.doc.ex[k];var x=metricVal(e,met);if(x==null)return;if(met==="vol"||met==="reps")v=(v||0)+x;else if(v==null||x>v)v=x});return v}
 function mVol(m){var t=null;allSess().forEach(function(z){if(z.m!==m||!z.doc.ex)return;Object.keys(z.doc.ex).forEach(function(k){var v=vol(z.doc.ex[k]);if(v!=null)t=(t||0)+v})});return t}
 function mWeight(m){var s0=0,n0=0;for(var w=1;w<=12;w++){var b=weekBw(w);if(b==null)continue;var dts=[];["A","B","C","D"].forEach(function(d){sessDocs(w,d).forEach(function(x){if(x.date)dts.push(x.date)})});if(dts.some(function(x){return x.slice(0,7)===m})){s0+=b;n0++}}return n0?Math.round(s0/n0*10)/10:null}
+function measSeries(f,MS){
+  var es=mEntries().slice().reverse().filter(function(e){return num(e[f])!=null});
+  if(st.pv==="m"){var by={};es.forEach(function(e){by[e.date.slice(0,7)]=num(e[f])});var ms=MS.slice();es.forEach(function(e){var m=e.date.slice(0,7);if(ms.indexOf(m)<0)ms.push(m)});ms.sort();return{labels:ms.map(mLabel),pts:ms.map(function(m,i){return{w:i+1,v:by[m]==null?null:by[m]}})}}
+  return{labels:es.map(function(e){return e.date.split("-").reverse().slice(0,2).join("/")}),pts:es.map(function(e,i){return{w:i+1,v:num(e[f])}})};
+}
+function measCard(MS){
+  var h='<section class="card" id="mchart"><h2>Medidas do corpo</h2>';
+  var fs=MFIELDS.filter(function(f){return mEntries().some(function(e){return num(e[f[0]])!=null})});
+  if(!fs.length)return h+'<p class="mut" style="margin:8px 0 0">Nenhuma medida registrada ainda. Na aba <b style="color:var(--ink)">Medidas</b>, anote braços, coxas, cintura e o resto. Medir a cada 2 a 4 semanas, no mesmo horário, já mostra a evolução.</p></section>';
+  if(!st.pmf||!fs.some(function(f){return f[0]===st.pmf}))st.pmf=(fs.filter(function(f){return f[0]==="bracoD"})[0]||fs[0])[0];
+  h+='<div class="evl">';
+  fs.forEach(function(f){
+    var sr=measSeries(f[0],MS),vals=sr.pts.map(function(q){return q.v}),got=vals.filter(function(v){return v!=null});
+    var a=got[0],z=got[got.length-1],d=Math.round((z-a)*10)/10,low=f[0]==="gord"||f[0]==="cintura";
+    var cls=!d||got.length<2||f[0]==="peso"?"eq":((d<0)===low?"up":"dn");
+    var un=f[1].indexOf("%")>=0?"%":f[0]==="peso"?" kg":" cm";
+    h+='<button type="button" class="evr" data-act="pmf" data-v="'+f[0]+'"'+(st.pmf===f[0]?' aria-current="true"':'')+'><span class="evn"><b>'+esc(f[1].split(" (")[0])+'</b><span class="mut">'+got.length+(got.length===1?' medição':' medições')+'</span></span>'+spark(vals)+'<span class="evd '+cls+'"><b>'+fmt(a)+(got.length>1?' → '+fmt(z):'')+un+'</b><span>'+(got.length<2?'1ª medição':(d>0?'▲ +':d<0?'▼ ':'= ')+(d?fmt(Math.abs(d)*(d<0?-1:1))+un:'igual'))+'</span></span></button>';
+  });
+  h+='</div>';
+  var cur=fs.filter(function(f){return f[0]===st.pmf})[0],sr2=measSeries(cur[0],MS);
+  h+='<div class="meta" style="margin-top:12px;font-size:14px;color:var(--ink)"><b>'+esc(cur[1])+'</b> '+(st.pv==="m"?'por mês':'por data de medição')+'</div>'+chartSvg(sr2.pts,cur[1].indexOf("%")>=0?"%":cur[0]==="peso"?"kg":"cm",{label:cur[1],labels:sr2.labels});
+  h+='<p class="mut" style="font-size:12px;margin:8px 0 0">Verde: mudou para o lado bom (braços, coxas e peito subindo; cintura e gordura descendo). O peso fica neutro, porque depende do seu objetivo.</p>';
+  return h+'</section>';
+}
 function evoSummary(){
   var rows=[];
   allList().forEach(function(a){
@@ -898,10 +923,9 @@ function drawProgress(){
   var h='<div class="energy pvt"><button type="button" data-act="pv" data-v="w" aria-pressed="'+(st.pv!=="m")+'">Por semana</button><button type="button" data-act="pv" data-v="m" aria-pressed="'+(st.pv==="m")+'">Por mês</button></div>';
   h+=evoSummary();
   h+='<section class="card" id="pchart"><h2>Gráfico do exercício</h2><div class="grid2"><label class="f">Exercício<select id="p-ex"><option value="all:all"'+(st.pex==="all:all"?" selected":"")+'>Todos juntos (variação %)</option>'+allList().map(function(a){return'<option value="'+a.day+":"+a.e.k+'"'+(st.pex===a.day+":"+a.e.k?" selected":"")+'>'+esc(a.e.n)+' ('+a.day+')</option>'}).join("")+'</select></label>';
-  h+='<label class="f">Métrica<select id="p-met"><option value="max"'+(st.pm==="max"?" selected":"")+'>Carga máxima (kg)</option><option value="rm"'+(st.pm==="rm"?" selected":"")+'>Força estimada (1RM, kg)</option><option value="vol"'+(st.pm==="vol"?" selected":"")+'>Volume (kg × reps)</option><option value="reps"'+(st.pm==="reps"?" selected":"")+'>Repetições totais</option></select></label></div><div id="chart"></div><p class="mut" style="font-size:12px;margin:8px 0 0">Força estimada (1RM): quanto você levantaria em 1 repetição, calculado pela melhor série (fórmula de Epley).</p></section>';
+  h+='<label class="f">Métrica<select id="p-met"><option value="max"'+(st.pm==="max"?" selected":"")+'>Carga máxima (kg)</option><option value="rm"'+(st.pm==="rm"?" selected":"")+'>Força estimada (1RM, kg)</option><option value="reps"'+(st.pm==="reps"?" selected":"")+'>Repetições totais</option></select></label></div><div id="chart"></div><p class="mut" style="font-size:12px;margin:8px 0 0">Força estimada (1RM): quanto você levantaria em 1 repetição, calculado pela melhor série (fórmula de Epley).</p></section>';
   var MS=monthsAll(),ML=MS.map(mLabel);
-  var vs=[];if(st.pv==="m")MS.forEach(function(m,i){vs.push({w:i+1,v:mVol(m)})});else for(var w0=1;w0<=12;w0++)vs.push({w:w0,v:weekVol(w0)});
-  h+='<section class="card"><h2>Volume total por '+(st.pv==="m"?'mês':'semana')+'</h2><p class="mut" style="margin:6px 0 0;font-size:13px">Soma de carga × repetições de todos os exercícios. Mostra se o treino está ficando mais pesado no geral.</p>'+chartSvg(vs,"kg",{zero:true,label:"Volume total",labels:st.pv==="m"?ML:null})+'</section>';
+  h+=measCard(MS,ML);
   var bws=st.pv==="m"?MS.map(function(m,i){return{w:i+1,v:mWeight(m)}}):bwSeries();if(bws.some(function(q){return q.v!=null}))h+='<section class="card"><h2>Peso corporal'+(st.pv==="m"?' (média do mês)':'')+'</h2>'+chartSvg(bws,"kg",{label:"Peso corporal",labels:st.pv==="m"?ML:null})+'</section>';
   h+='<section class="card"><h2>Exercícios completos por semana</h2><div class="bars">';
   var lbl="";
@@ -975,7 +999,7 @@ function drawDash(){
   h+='<div class="kpi"><b>'+cw+'/12</b><span>Semana atual</span></div>';
   h+='<div class="kpi"><b>'+pct+'%</b><span>Programa concluído</span></div>';
   h+='<div class="kpi"><b>'+sessions+'</b><span>Treinos registrados</span></div>';
-  h+='<div class="kpi"><b>'+(vtot?fmt(Math.round(vtot/1000*10)/10)+" t":"–")+'</b><span>Volume total levantado</span></div></div>';
+  h+='<div class="kpi"><b>'+(lastDate?lastDate.split("-").reverse().slice(0,2).join("/"):"–")+'</b><span>Último treino</span></div></div>';
   h+='<div class="meta" style="margin-top:12px">Semana '+cw+': '+curN+' de '+curT+' exercícios completos</div><div class="prog"><i style="width:'+Math.round(curN/curT*100)+'%"></i></div>';
   h+='<div class="meta">'+(lastDate?'Último treino: '+esc(lastDate.split("-").reverse().join("/")):'Nenhum treino registrado ainda')+'</div>';
   h+='<button type="button" class="btn ghost" data-act="gocur" data-w="'+cw+'">Ir para a semana '+cw+'</button></section>';
@@ -1198,7 +1222,7 @@ function chartMulti(){
   return s;
 }
 function drawChart(){
-  var box=$("#chart");if(!box)return;var un={max:"kg",rm:"kg",vol:"kg × reps",reps:"reps"};
+  var box=$("#chart");if(!box)return;if(st.pm==="vol")st.pm="max";var un={max:"kg",rm:"kg",vol:"kg × reps",reps:"reps"};
   if(st.pex==="all:all"){box.innerHTML=chartMulti();return}
   var p=st.pex.split(":"),series=[];
   if(st.pv==="m"){var MS2=monthsAll();if(!MS2.length){box.innerHTML='<p class="mut">Registre treinos com data para ver por mês.</p>';return}MS2.forEach(function(m,i){series.push({w:i+1,v:mMetric(p[0],p[1],m,st.pm)})});box.innerHTML=chartSvg(series,un[st.pm]||"",{zero:st.pm==="vol"||st.pm==="reps",labels:MS2.map(mLabel)});return}
@@ -1304,6 +1328,7 @@ document.addEventListener("click",function(ev){
   if(b.dataset.w){st.xundo=null;st.week=+b.dataset.w;st.ses=isDay(st.tab)?lastSess(st.week,st.tab):1;render();window.scrollTo(0,0);return}
   if(b.dataset.tab){st.xundo=null;st.fi=0;st.tab=b.dataset.tab;st.ses=isDay(st.tab)?lastSess(st.week,st.tab):1;st.pdel=null;render();window.scrollTo(0,0);return}
   var a=b.dataset.act;if(!a)return;
+  if(a==="pmf"){st.pmf=b.dataset.v;render();var mc=$("#mchart");if(mc&&mc.scrollIntoView)try{mc.scrollIntoView({block:"start"})}catch(e){}return}
   if(a==="pv"){st.pv=b.dataset.v;try{lsSet("dt:pv",st.pv)}catch(e){}render();return}
   if(a==="pex"){st.pex=b.dataset.v;var sel=$("#p-ex");if(sel)sel.value=st.pex;drawChart();var pc=$("#pchart");if(pc&&pc.scrollIntoView)try{pc.scrollIntoView({block:"start"})}catch(e){}return}
   if(/^f(view|new|edit|use|go|delf|back|copy|add|dday|open|grp|pick|mv|del|model)$/.test(a)){if(loaded)fClick(a,b);return}
