@@ -737,10 +737,27 @@ function drawWorkout(day){
   if(st.focus)return undoBar(day)+drawFocus(day);
   return undoBar(day)+focusBtn()+drawWorkoutFull(day);
 }
+function hhmm(){var n=new Date();return two(n.getHours())+":"+two(n.getMinutes())}
+function tmin(x){var m=/^(\d{1,2}):(\d{2})$/.exec(String(x||""));return m?(+m[1])*60+(+m[2]):null}
+function durMin(a,b){var x=tmin(a),y=tmin(b);if(x==null||y==null)return null;var d=y-x;if(d<0)d+=1440;return d}
+function sessBox(d){
+  var hi=d.hi||"",hf=d.hf||"",h='<section class="card" id="sess"><div class="row" style="align-items:center"><h2>Horário do treino</h2>';
+  if(hi&&hf)h+='<span class="chip dn">'+durMin(hi,hf)+' min</span>';
+  else if(hi)h+='<span class="chip up" id="telap">em andamento</span>';
+  h+='</div>';
+  if(d.date)h+='<div class="meta">Treino do dia '+esc(d.date.split("-").reverse().join("/"))+'</div>';
+  h+='<div class="grid2"><label class="f">Início<input type="time" data-f="hi" value="'+esc(hi)+'"></label><label class="f">Fim<input type="time" data-f="hf" value="'+esc(hf)+'"></label></div>';
+  if(!hi)h+='<button type="button" class="btn" data-act="tstart">▶ Começar treino agora</button>';
+  else if(!hf)h+='<button type="button" class="btn" data-act="tend">■ Terminar treino agora</button>';
+  return h+'<p class="mut" style="margin:8px 0 0;font-size:12px">Os botões gravam a hora do celular e a duração é calculada sozinha. Dá para corrigir os horários nos campos.</p></section>';
+}
+function tick(){var e=$("#telap");if(!e)return;var d=docs[did(st.week,st.tab)]||{};if(d.hi&&!d.hf&&d.date===today()){var m=durMin(d.hi,hhmm());e.textContent=m+" min em andamento"}}
+setInterval(tick,30000);
 function drawWorkoutFull(day){
   var id=did(st.week,day),d=docs[id]||{},h="";
   var wb=weekBw(st.week),pb=null;for(var q=st.week-1;q>=1&&pb==null;q--)pb=weekBw(q);
   h+='<section class="card"><div class="row" style="align-items:center"><h2>Peso da semana '+st.week+'</h2>'+(wb!=null&&pb!=null?'<span class="chip '+(wb<pb?'dn':wb>pb?'up':'')+'">'+(wb-pb>0?'+':'')+fmt(Math.round((wb-pb)*10)/10)+' kg</span>':'')+'</div><p class="mut" style="margin:6px 0 0;font-size:13px">Um registro por semana, de preferência em jejum. Vale para o Treino A e o B.</p><label class="f" style="margin-top:10px">Peso corporal (kg)<input class="n" type="text" inputmode="decimal" data-f="wbw" value="'+esc(wbRaw(st.week))+'"></label></section>';
+  h+=sessBox(d);
   h+='<details class="card" open><summary>Dados do dia</summary>';
   h+='<div class="grid2"><label class="f">Data<input type="date" data-f="date" value="'+esc(d.date||"")+'"></label>';
   h+='<label class="f">Sono (horas)<input class="n" type="text" inputmode="decimal" data-f="sleep" value="'+esc(d.sleep||"")+'"></label>';
@@ -1143,8 +1160,10 @@ function onField(t){
     d.week=st.week;d.day=day;
     if(k){var e=exData(d,k);if(f==="set")e.s[+t.dataset.i][+t.dataset.j]=t.value;else e[f]=t.value}
     else d[f]=t.value;
+    if(f==="hi"||f==="hf"){var dm=durMin(d.hi,d.hf);if(dm!=null)d.dur=String(dm)}
     if(!d.date&&f!=="date")d.date=today();
   });
+  if(f==="hi"||f==="hf"){var dv=docs[id]&&docs[id].dur,di=document.querySelector('input[data-f="dur"]');if(di&&dv)di.value=dv;var sb=$("#sess");if(sb)sb.outerHTML=sessBox(docs[id]||{})}
   if(f=="cardio"||f=="ckm"){var cp=$("#cpace");if(cp)cp.innerHTML=paceText(docs[id])}
   refreshDerived();
 }
@@ -1300,6 +1319,10 @@ document.addEventListener("click",function(ev){
     var xm2=$("#x-msg");if(xm2){xm2.textContent=xn+" entrou no Treino "+day+". Ele está logo acima desta lista.";xm2.className="msg"}
     var xc2=$("#xcard");if(xc2&&xc2.scrollIntoView)try{xc2.scrollIntoView({block:"start"})}catch(e){}
   }
+  else if(a==="tstart"||a==="tend"){
+    mut(id,function(d){d.week=st.week;d.day=day;if(a==="tstart"){d.hi=hhmm();d.date=d.date&&d.hf?d.date:today();delete d.hf}else{d.hf=hhmm();var dm=durMin(d.hi,d.hf);if(dm!=null)d.dur=String(dm)}if(!d.date)d.date=today()});
+    render();tick();
+  }
   else if(a==="xdel"||a==="xundo"){
     var xk=b.dataset.k,off=a==="xdel",xnm="";
     mut("settings",function(d){var arr=d.extra&&d.extra[day];if(Array.isArray(arr))arr.forEach(function(z){if(z&&z.k===xk){z.off=off;xnm=z.n}})});
@@ -1336,14 +1359,14 @@ function download(name,mime,text){
 }
 function csvCell(v){v=v==null?"":String(v);return /[",;\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
 function exportCsv(){
-  var rows=[["Semana","Treino","Data","Exercício","Série","kg","Reps","RIR","Descanso (s)","Dor","Variação","Observação","Peso da semana (kg)","Sono (h)","Energia","Duração (min)","Aquecimento (min)","Cardio (min)","Cardio tipo","Cardio distância (km)"]];
+  var rows=[["Semana","Treino","Data","Exercício","Série","kg","Reps","RIR","Descanso (s)","Dor","Variação","Observação","Peso da semana (kg)","Sono (h)","Energia","Início","Fim","Duração (min)","Aquecimento (min)","Cardio (min)","Cardio tipo","Cardio distância (km)"]];
   for(var w=1;w<=12;w++)["A","B","C","D"].forEach(function(day){
     var d=docs[did(w,day)];if(!d)return;
     (EX[day]||[]).concat(EX!==EX0&&EX0[day]?EX0[day]:[]).concat(swapHist(day)).concat(extras(day,true)).forEach(function(x){
       var e=d.ex&&d.ex[x.k];if(!e)return;
       e.s.forEach(function(s,i){
         if(s[0]===""&&s[1]===""&&s[2]==="")return;
-        rows.push([w,day,d.date||"",x.n,i+1,s[0],s[1],s[2],e.rest,e.pain,e.variant,e.note,wbRaw(w),d.sleep||"",d.energy||"",d.dur||"",d.warm||"",d.cardio||"",d.ctype||"",d.ckm||""]);
+        rows.push([w,day,d.date||"",x.n,i+1,s[0],s[1],s[2],e.rest,e.pain,e.variant,e.note,wbRaw(w),d.sleep||"",d.energy||"",d.hi||"",d.hf||"",d.dur||"",d.warm||"",d.cardio||"",d.ctype||"",d.ckm||""]);
       });
     });
   });
