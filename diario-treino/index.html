@@ -413,7 +413,11 @@ function illByName(n){
 }
 /* vídeos do @alexeysmirnov__ já conhecidos (código do reel) */
 var VID={"supino reto com barra":"DaS-miuoAp_","supino reto com halteres":"C3kJPuuK9NE","supino na máquina":"DfhqwvjIfMU","flexão de braço":"DTF6dQFCNFc","voador (peck deck)":"DadO4XKoIcL","crossover polia alta":"Da5rbIPIv2k","crucifixo reto com halteres":"Dfz2UcMxqvd","elevação lateral com halteres":"De95rSOxGyn","tríceps polia alta (barra)":"DanjJfsohyC","tríceps corda":"Dbi0O7gox70","leg press horizontal":"C6sxUeMqSNU","cadeira extensora":"DaaiUueounE","panturrilha no leg press":"DMOB3qaqCUa","panturrilha sentado (sóleo)":"DMOB3qaqCUa","panturrilha em pé na máquina":"DNvY9t90Bvy","abdominal supra com carga":"DexFPg3RojI","abdominal infra":"Df4n4AhsA65","puxada frente aberta":"DgBGNsZRnXo","remada baixa no cabo":"DfP4RBzRETA","crucifixo invertido na máquina":"DXPI-zlCOAV","crucifixo invertido":"Db3iK2tKccI","rosca na polia baixa":"DZaNZlQIeoZ","rosca direta barra w":"DeHhNdQIru3","rosca direta com barra":"DQjnPcniKlP","extensão lombar na mesa romana":"C5LElpoKwsU","supino inclinado com halteres":"DfmwYfORe5a","crucifixo inclinado":"DfNR6ppxUqd","crossover polia baixa":"DcELx5woC39","rosca alternada com halteres":"DdWowgKogGw","rosca inclinada com halteres":"DfpYBmoxzhe","rosca scott":"DfCphpBonbI","rosca 21":"Dd6oU3DIQBK","rosca martelo":"Dc80WQVo0dL","tríceps francês":"DcUACuUROS6","barra fixa":"DeSUo-hxaRK","remada curvada com barra":"DcwRIE0RojR","remada unilateral (serrote)":"DdjcaegoagR","encolhimento com halteres":"DeUhOFgIjnG"};
-function vidFor(n){return VID[String(n||"").toLowerCase()]||null}
+/* sem vídeo do Alexey: reels do @getultraplus */
+var VID2={"elevação pélvica (hip thrust)":"Df4fFPPobxk","desenvolvimento com halteres":"DfHYC66owk5","agachamento goblet":"De_uBzqiYYp","leg press 45°":"DfAiUvhiaKQ","agachamento búlgaro":"DeZQEJmCuVP","elevação lateral na polia":"DeYvg5viMzm","agachamento no smith":"DeUdrkICGdX","abdominal supra":"DeOfS2-CLWI"};
+var ALT={};Object.keys(VID2).forEach(function(k){ALT[VID2[k]]=1});
+function vidFor(n){var k=String(n||"").toLowerCase();return VID[k]||VID2[k]||null}
+function vidSrc(code){return code&&ALT[code]?"@getultraplus":"@alexeysmirnov__"}
 function hrefOf(x){return x.u?x.u:x.r?REEL+x.r+"/":null}
 function cleanUrl(u){u=String(u||"").trim();var m=u.match(/https?:\/\/(www\.)?(instagram\.com|youtube\.com|youtu\.be|m\.youtube\.com)\/[^\s"'<>]+/i);return m?m[0]:""}
 function illKey(x){return ILL[x.k]?x.k:illByName(x.n)||TYPE_ILL[x.t||guessType(x.n)]||"outro"}
@@ -444,7 +448,7 @@ function exList(day){return slots(day,st.week).concat(extras(day))}
 function allList(){var out=[],seen={};var ds=DAYS().slice();["A","B"].forEach(function(d){if(ds.indexOf(d)<0)ds.push(d)});ds.forEach(function(d){(EX[d]||[]).concat(EX!==EX0&&EX0[d]?EX0[d]:[]).concat(swapHist(d)).concat(extras(d,true)).forEach(function(e){if(seen[d+e.k])return;seen[d+e.k]=1;out.push({day:d,e:e})})});return out}
 function pickList(g,act,o,have){
   var h='<div class="xhd">'+illSvg({k:"",n:g[1],t:g[0]})+'<b>'+g[1]+'</b></div><div class="xls">';
-  g[2].forEach(function(n){var on=have[n.toLowerCase()];h+='<button type="button" data-act="'+act+'" data-g="'+g[0]+'" data-o="'+(o||"")+'" data-n="'+esc(n)+'"'+(on?' disabled':'')+'>'+illSvg({k:"",n:n,t:g[0]})+'<span>'+esc(n)+(vidFor(n)?'<small>▶ tem vídeo dele</small>':'')+'</span><i>'+(on?'✓ no treino':act==="swpick"?'Trocar por este':'+ Adicionar')+'</i></button>'});
+  g[2].forEach(function(n){var on=have[n.toLowerCase()];h+='<button type="button" data-act="'+act+'" data-g="'+g[0]+'" data-o="'+(o||"")+'" data-n="'+esc(n)+'"'+(on?' disabled':'')+'>'+illSvg({k:"",n:n,t:g[0]})+'<span>'+esc(n)+(vidFor(n)?'<small>▶ '+(ALT[vidFor(n)]?'tem vídeo (@getultraplus)':'tem vídeo dele')+'</small>':'')+'</span><i>'+(on?'✓ no treino':act==="swpick"?'Trocar por este':'+ Adicionar')+'</i></button>'});
   return h+'</div>';
 }
 function swapBox(day,x){
@@ -533,7 +537,7 @@ function drawFichaView(){
   (f.order||[]).forEach(function(d){
     var dd=f.days[d]||{items:[]},it=dd.items||[];if(!it.length)return;
     h+='<section class="card"><div class="row" style="align-items:center"><h2>Treino '+d+'</h2><span class="mut" style="font-size:13px">'+it.length+' exercícios</span></div>'+(dd.label?'<div class="meta" style="font-size:14px;color:var(--ink)">'+esc(dd.label)+'</div>':'');
-    h+='<div class="fls">'+it.map(function(x,i){var v=vidFor(x.n)||(function(){var r=null;["A","B"].forEach(function(z){EX0[z].forEach(function(y){if(y.k===x.k)r=y.r})});return r})();return'<div class="fit">'+illSvg({k:isP?x.k:"",n:x.n,t:x.t})+'<div class="fin"><b>'+(i+1)+'. '+esc(x.n)+'</b><div class="meta">'+(x.sets||3)+' séries · '+(x.reps?esc(x.reps)+' reps':'reps da semana')+'</div>'+(v?'<a class="vsrc" href="'+REEL+v+'/" target="_blank" rel="noopener">▶ Ver vídeo</a>':'')+'</div></div>'}).join("")+'</div>';
+    h+='<div class="fls">'+it.map(function(x,i){var v=vidFor(x.n)||(function(){var r=null;["A","B"].forEach(function(z){EX0[z].forEach(function(y){if(y.k===x.k)r=y.r})});return r})();return'<div class="fit">'+illSvg({k:isP?x.k:"",n:x.n,t:x.t})+'<div class="fin"><b>'+(i+1)+'. '+esc(x.n)+'</b><div class="meta">'+(x.sets||3)+' séries · '+(x.reps?esc(x.reps)+' reps':'reps da semana')+'</div>'+(v?'<a class="vsrc" href="'+REEL+v+'/" target="_blank" rel="noopener">▶ Ver vídeo'+(ALT[v]?' (@getultraplus)':'')+'</a>':'')+'</div></div>'}).join("")+'</div>';
     if(em)h+='<button type="button" class="btn ghost" data-act="fgo" data-day="'+d+'">Abrir Treino '+d+'</button>';
     h+='</section>';
   });
@@ -670,7 +674,7 @@ function exCard(day,x,big){
   var p=PLAN[w-1],sg=suggestion(w,day,x.k),h="";
   h+='<section class="card ex'+(isDone(e)?" done":"")+'" data-k="'+x.k+'">';
   h+='<div class="exh">'+(hrefOf(x)?'<a href="'+esc(hrefOf(x))+'" target="_blank" rel="noopener">'+esc(x.n)+'</a>'+(x.x?'<span class="xtag">extra</span>':x.sw?'<span class="xtag">troca</span>':''):'<span class="nm">'+esc(x.n)+(x.x?'<span class="xtag">extra</span>':x.sw?'<span class="xtag">troca</span>':'')+'</span>')+'<button type="button" class="tick" data-act="conc" data-k="'+x.k+'" aria-pressed="'+(!!e.done)+'" aria-label="Marcar '+esc(x.n)+' como concluído com o padrão da ficha" title="Concluir com o padrão da ficha">✓</button></div>';
-  h+=(big?illSvg(x,true):'')+'<div class="exb">'+(big?'':illSvg(x))+'<div><div class="meta">'+e.s.length+(e.s.length===1?' série':' séries')+' · '+(x.reps||p[1])+' reps · descanso até 2 min'+(hrefOf(x)||x.x||x.sw?'':' · sem vídeo dele')+'</div>'+(x.sw?'<div class="meta">No lugar de '+esc(x.orig)+' desde a semana '+x.from+'</div>':'');
+  h+=(big?illSvg(x,true):'')+'<div class="exb">'+(big?'':illSvg(x))+'<div><div class="meta">'+e.s.length+(e.s.length===1?' série':' séries')+' · '+(x.reps||p[1])+' reps · descanso até 2 min'+(hrefOf(x)||x.x||x.sw?'':' · sem vídeo dele')+(x.r&&ALT[x.r]&&!x.u?' · vídeo do @getultraplus':'')+'</div>'+(x.sw?'<div class="meta">No lugar de '+esc(x.orig)+' desde a semana '+x.from+'</div>':'');
   h+='<div class="chips pr">'+prBadges(w,day,x.k)+'</div></div></div>';
   if(sg){
     h+='<div class="sug"><span>Última carga: <b>'+fmt(sg.last.kg)+' kg</b> (sem. '+sg.last.w+')<br>'+(sg.keep?'Manter: <b>'+fmt(sg.lo)+' kg</b>':'Sugerido: <b>'+fmt(sg.lo)+(sg.hi>sg.lo?'–'+fmt(sg.hi):'')+' kg</b>')+'</span><button type="button" data-act="fill" data-k="'+x.k+'" data-v="'+sg.lo+'">Preencher</button></div>';
