@@ -1229,6 +1229,19 @@ function onField(t){
     }
   }
   var day=st.tab,id=cid(day),k=t.dataset.k,f=t.dataset.f;
+  if(f==="date"&&t.value&&docs[id]&&docs[id].date&&docs[id].date!==t.value&&dayHasEx(docs[id])){
+    /* data diferente num treino que já tem séries: abre o treino daquela data, sem mexer no atual */
+    var nd=t.value,l=sessList(st.week,day),ex=l.filter(function(z){return z.d.date===nd})[0];
+    if(ex){st.ses=ex.n;render();setStatus("Abrindo o treino de "+nd.split("-").reverse().join("/"));setTimeout(baseStatus,2500);return}
+    var nn=0;for(var q=2;q<=3;q++){if(!l.some(function(z){return z.n===q})){nn=q;break}}
+    if(!nn){t.value=docs[id].date;setStatus("Já há 3 treinos "+day+" nesta semana. Use a próxima semana.",true);setTimeout(baseStatus,3500);return}
+    st.ses=nn;mut(sid(st.week,day,nn),function(d){d.week=st.week;d.day=day;d.date=nd;d.ses=nn});render();window.scrollTo(0,0);
+    setStatus("Novo treino "+day+" em "+nd.split("-").reverse().join("/")+". O anterior ficou guardado.");setTimeout(baseStatus,3500);return;
+  }
+  if(f==="date"&&t.value&&(st.ses||1)>1&&docs[id]&&!dayHasEx(docs[id])){
+    var same=sessList(st.week,day).filter(function(z){return z.n!==st.ses&&z.d.date===t.value})[0];
+    if(same){put(id,{});st.ses=same.n;render();return}
+  }
   if(f==="wbw"){
     var wk=st.week;
     mut(did(wk,"A"),function(d){d.week=wk;d.day="A";d.bw=t.value});
@@ -1243,6 +1256,7 @@ function onField(t){
     if(!d.date&&f!=="date")d.date=today();
   });
   if(f==="hi"||f==="hf"){var dv=docs[id]&&docs[id].dur,di=document.querySelector('input[data-f="dur"]');if(di&&dv)di.value=dv;var sb=$("#sess");if(sb)sb.outerHTML=sessBox(docs[id]||{})}
+  if(f==="date"){var sbar=document.querySelector(".sesb");if(sbar)sbar.outerHTML=sessBar(day)}
   if(f=="cardio"||f=="ckm"){var cp=$("#cpace");if(cp)cp.innerHTML=paceText(docs[id])}
   refreshDerived();
 }
